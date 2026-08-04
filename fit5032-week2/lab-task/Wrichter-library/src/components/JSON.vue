@@ -9,18 +9,30 @@
 
       <h3>Iterating through Arrays</h3>
       <!-- Activity 3.1: Render a list containing author names and their birth years. Hint: Make use of the v-for directive to iterate through the array of authors. -->
-      <!-- TODO: CODE TO RENDER LIST OF AUTHORS HERE -->
+      <ul>
+        <li v-for="author in authors" :key="author.id">
+          {{ author.name }} ({{ author.birthYear }})
+        </li>
+      </ul>
 
       <h3>Filtering Arrays</h3>
       <!-- Activity 3.2: Render a list containing authors born after 1850. Hint: Make use of the v-for directive to iterate through the array of authors that you have filtered out. -->
       <p>Authors born after 1850:</p>
-      <!-- TODO: CODE TO RENDER LIST OF AUTHORS HERE -->
+      <ul>
+        <li v-for="author in modernAuthors" :key="author.id"> 
+          {{ author.name }} ({{ author.birthYear }})
+        </li>
+      </ul>
 
       <h3>Mapping Arrays</h3>
       <p>Famous works:</p>
       <ul>
         <!-- Activity 3.3: Render a list of all famous works. Hint: Use the v-for directive to iterate through the array of authors that you have filtered out. -->
-        <!-- TODO: CODE TO RENDER LIST OF FAMOUS WORKS HERE -->
+        <ul>
+          <li v-for="work in allFamousWorks" :key="work">
+            {{ work }}
+          </li>
+        </ul>
       </ul>
 
       <h3>Finding in Arrays</h3>
