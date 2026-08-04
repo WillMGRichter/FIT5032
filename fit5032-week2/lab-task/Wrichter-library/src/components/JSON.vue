@@ -10,7 +10,7 @@
       <h3>Iterating through Arrays</h3>
       <!-- Activity 3.1: Render a list containing author names and their birth years. Hint: Make use of the v-for directive to iterate through the array of authors. -->
       <ul>
-        <li v-for="author in authors" :key="author.id">
+        <li v-for="author in authors" :key="author.id" :class="{ highlight: isHighlight(author.name) }">
           {{ author.name }} ({{ author.birthYear }})
         </li>
       </ul>
@@ -19,7 +19,7 @@
       <!-- Activity 3.2: Render a list containing authors born after 1850. Hint: Make use of the v-for directive to iterate through the array of authors that you have filtered out. -->
       <p>Authors born after 1850:</p>
       <ul>
-        <li v-for="author in modernAuthors" :key="author.id">
+        <li v-for="author in modernAuthors" :key="author.id" :class="{ highlight: isHighlight(author.name) }">
           {{ author.name }} ({{ author.birthYear }})
         </li>
       </ul>
@@ -91,7 +91,12 @@
       <!-- [OPTIONAL - NON ASSESSED] Activity 6: Attribute, Class and Style Bindings -->
       <h2>Attribute, Class and Style Binding with <code>v-bind</code></h2>
       <p>Highlighting Specific Authors:</p>
-    </section>
+      <select v-model="selectedAuthor">
+        <option v-for="author in authors" :key="author.id" :value="author.name">
+          {{ author.name }}
+        </option>
+      </select>
+      </section>
   </div>
 </template>
 
@@ -113,6 +118,10 @@ const modernAuthors = computed(() =>
 const allFamousWorks = computed(() => 
   authors.flatMap((author) => author.famousWorks.map((work) => work.title))
 )
+
+// Activity Post Lab: Find George Orwell
+const selectedAuthor = ref('')
+const isHighlight = (authorName) => authorName === selectedAuthor.value
 </script>
 
 <style scoped>
