@@ -1,6 +1,3 @@
-import authors from "../assets/authors.json"
-import bookstores from "../assets/bookstores.json"
-
 <!-- JSONLab.vue -->
 <template>
   <div class="json-lab">
@@ -92,18 +89,19 @@ import bookstores from "../assets/bookstores.json"
 import { ref, computed } from "vue"
 
 // Activity 1: Import JSON files (authors.json and bookstores.json)
-// TODO: CODE TO IMPORT JSON FILES HERE
+import authors from "../assets/authors.json"
+import bookstores from "../assets/bookstores.json"
 
 const showMessage = ref(false)
 
 // Activity 2.1: Get authors born after 1850
 const modernAuthors = computed(() => {
-  // TODO: CODE TO FILTER ARRAY OF AUTHORS HERE
+  authors.filter((author) => author.birthYear > 1850)
 })
 
 // Activity 2.2: Get all famous works
 const allFamousWorks = computed(() => {
-  // TODO: CODE TO GET ALL FAMOUS WORKS HERE
+  authors.flatMap((author) => author.famousWorks.map((work) => work.title))
 })
 
 </script>
