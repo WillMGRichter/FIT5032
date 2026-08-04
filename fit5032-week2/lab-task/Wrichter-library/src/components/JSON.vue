@@ -19,7 +19,7 @@
       <!-- Activity 3.2: Render a list containing authors born after 1850. Hint: Make use of the v-for directive to iterate through the array of authors that you have filtered out. -->
       <p>Authors born after 1850:</p>
       <ul>
-        <li v-for="author in modernAuthors" :key="author.id"> 
+        <li v-for="author in modernAuthors" :key="author.id">
           {{ author.name }} ({{ author.birthYear }})
         </li>
       </ul>
@@ -83,9 +83,7 @@
       <p>Toggle visibility based on a condition.</p>
       <!-- Activity 4.1: Toggle the message visibility when the button is clicked. -->
       <button @click="showMessage = !showMessage">Toggle Message</button>
-      <p v-if="showMessage" class="message success">
-        ✨ You're a Vue superstar! ✨
-      </p>
+      <p v-if="showMessage" class="message success">✨ You're a Vue superstar! ✨</p>
       <p v-else class="message">Click the button to see a message.</p>
     </section>
 
@@ -93,17 +91,16 @@
       <!-- [OPTIONAL - NON ASSESSED] Activity 6: Attribute, Class and Style Bindings -->
       <h2>Attribute, Class and Style Binding with <code>v-bind</code></h2>
       <p>Highlighting Specific Authors:</p>
-
     </section>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue"
+import { ref, computed } from 'vue'
 
 // Activity 1: Import JSON files (authors.json and bookstores.json)
-import authors from "../assets/authors.json"
-import bookstores from "../assets/bookstores.json"
+import authors from '../assets/json/authors.json'
+import bookstores from '../assets/json/bookstores.json'
 
 const showMessage = ref(false)
 
@@ -116,12 +113,11 @@ const modernAuthors = computed(() => {
 const allFamousWorks = computed(() => {
   authors.flatMap((author) => author.famousWorks.map((work) => work.title))
 })
-
 </script>
 
 <style scoped>
 .json-lab {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   max-width: 80vw;
   margin: 0 auto;
   padding: 20px;
@@ -166,7 +162,7 @@ code {
   background-color: #e0e0e0;
   padding: 2px 5px;
   border-radius: 4px;
-  font-family: "Courier New", Courier, monospace;
+  font-family: 'Courier New', Courier, monospace;
 }
 
 ul {
