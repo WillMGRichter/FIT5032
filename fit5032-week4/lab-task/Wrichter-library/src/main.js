@@ -18,4 +18,9 @@ app.use(PrimeVue, {
     }
 })
 
+app.component('DataTable', DataTable);
+app.component('Column', Column);
+app.component('ColumnGroup', ColumnGroup);
+app.component('Row', Row);
+
 app.mount('#app')
