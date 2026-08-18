@@ -105,6 +105,9 @@
             <div v-if="errors.reason" class="text-danger">
               {{ errors.reason }}
             </div>
+            <div v-if="positives.reason" class="text-success">
+              {{ positives.reason }}
+            </div>
           </div>
 
           <div class="text-center">
@@ -205,6 +208,10 @@
         reason: null
     });
 
+    const positives = ref({
+        reason: null
+    });
+
     const validateName = (blur) => {
       if (formData.value.username.length < 3) {
         if (blur) errors.value.username = 'Username must be at least 3 characters long.';
@@ -257,6 +264,9 @@
         if (blur) errors.value.reason = 'Please provide a reason for joining.';
       } else {
         errors.value.reason = null;
+        if (formData.value.reason.includes('friend')) {
+          positives.value.reason = 'Great to have a friend';
+        }
       }
     };
 
