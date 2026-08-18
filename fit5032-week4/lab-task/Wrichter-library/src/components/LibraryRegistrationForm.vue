@@ -12,9 +12,13 @@
                 type="text"
                 class="form-control"
                 id="username"
-                required
+                @blur="() => validateName(true)"
+                @input="() => validateName(false)"
                 v-model="formData.username"
               >
+              <div v-if="errors.username" class="text-danger mt-1">
+                {{ errors.username }}
+              </div>
             </div>
 
             <div class="col-12 col-sm-6 col-md-6">
@@ -23,8 +27,6 @@
                 type="password"
                 class="form-control"
                 id="password"
-                minlength="4"
-                maxlength="10"
                 v-model="formData.password"
               >
             </div>
@@ -37,7 +39,6 @@
                   type="checkbox"
                   class="form-check-input"
                   id="isAustralian"
-                  required
                   v-model="formData.isAustralian"
                 >
                 <label class="form-check-label" for="isAustralian">
@@ -51,7 +52,6 @@
               <select
                 class="form-select"
                 id="gender"
-                required
                 v-model="formData.gender"
               >
                 <option value="male">Male</option>
@@ -67,8 +67,6 @@
               class="form-control"
               id="reason"
               rows="3"
-              required
-              maxlength="200"
               v-model="formData.reason"
             ></textarea>
           </div>
@@ -124,9 +122,13 @@
     const submittedCards = ref([]);
 
     const submitForm = () => {
+      validateName(true); // Validate on submit
+      if (!errors.value.username) {
         submittedCards.value.push({
             ...formData.value
         });
+        clearForm();
+      }
     };
 
     const clearForm = () => {
@@ -138,6 +140,23 @@
             gender: ''
         };
     };
+
+    const errors = ref({
+        username: null,
+        password: null,
+        resident: null,
+        gender: null,
+        reason: null
+    });
+
+    const validateName = (blur) => {
+      if (formData.value.username.length < 3) {
+        if (blur) errors.value.username = 'Username must be at least 3 characters long.';
+      } else {
+        errors.value.username = null;
+      }
+    }
+
 </script>
 
 <style scoped>
