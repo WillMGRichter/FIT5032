@@ -94,20 +94,25 @@
 
           <div class="mb-3">
             <label for="reason" class="form-label">Reason for joining</label>
-            <textarea
-              class="form-control"
-              id="reason"
-              rows="3"
-              @blur="() => validateReason(true)"
-              @input="() => validateReason(false)"
-              v-model="formData.reason"
-            ></textarea>
+              <textarea
+                class="form-control"
+                id="reason"
+                rows="3"
+                @blur="() => validateReason(true)"
+                @input="() => validateReason(false)"
+                v-model="formData.reason"
+              ></textarea>
             <div v-if="errors.reason" class="text-danger">
               {{ errors.reason }}
             </div>
             <div v-if="positives.reason" class="text-success">
               {{ positives.reason }}
             </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="reason" class="form-label">Suburb</label>
+            <input type="text" class="form-control" id="suburb" v-bind:value="formData.suburb" />
           </div>
 
           <div class="text-center">
@@ -170,7 +175,8 @@
         confirmPassword: '',
         isAustralian: false,
         reason: '',
-        gender: ''
+        gender: '',
+        suburb: 'Clayton',
     });
 
     const submittedCards = ref([]);
