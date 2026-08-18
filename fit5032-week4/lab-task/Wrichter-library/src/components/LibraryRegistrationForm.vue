@@ -27,8 +27,13 @@
                 type="password"
                 class="form-control"
                 id="password"
+                @blur="() => validatePassword(true)"
+                @input="() => validatePassword(false)"
                 v-model="formData.password"
               >
+              <div v-if="errors.password" class="text-danger">
+                {{ errors.password }}
+              </div>
             </div>
           </div>
 
@@ -123,7 +128,8 @@
 
     const submitForm = () => {
       validateName(true); // Validate on submit
-      if (!errors.value.username) {
+      validatePassword(true); // Validate password on submit
+      if (!errors.value.username && !errors.value.password) {
         submittedCards.value.push({
             ...formData.value
         });
@@ -156,6 +162,29 @@
         errors.value.username = null;
       }
     }
+
+    const validatePassword = () => {
+      const password = formData.value.password;
+      const minLength = 8;
+      const hasUpperCase = /[A-Z]/.test(password);
+      const hasLowerCase = /[a-z]/.test(password);
+      const hasNumber = /\d/.test(password);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+      if (password.length < minLength) {
+        errors.value.password = `Password must be at least ${minLength} characters long.`;
+      } else if (!hasUpperCase) {
+        errors.value.password = 'Password must contain at least one uppercase letter.';
+      } else if (!hasLowerCase) {
+        errors.value.password = 'Password must contain at least one lowercase letter.';
+      } else if (!hasNumber) {
+        errors.value.password = 'Password must contain at least one number.';
+      } else if (!hasSpecialChar) {
+        errors.value.password = 'Password must contain at least one special character.';
+      } else {
+        errors.value.password = null;
+      }
+    };
 
 </script>
 
