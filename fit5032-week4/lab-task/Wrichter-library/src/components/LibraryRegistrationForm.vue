@@ -44,11 +44,16 @@
                   type="checkbox"
                   class="form-check-input"
                   id="isAustralian"
+                  @blur="() => validateResident(true)"
+                  @input="() => validateResident(false)"
                   v-model="formData.isAustralian"
                 >
                 <label class="form-check-label" for="isAustralian">
                   Australian Resident?
                 </label>
+                <div v-if="errors.resident" class="text-danger">
+                  {{ errors.resident }}
+                </div>
               </div>
             </div>
 
@@ -57,12 +62,17 @@
               <select
                 class="form-select"
                 id="gender"
+                @blur="() => validateGender(true)"
+                @input="() => validateGender(false)"
                 v-model="formData.gender"
               >
                 <option value="male">Male</option>
                 <option value="female">Female</option>
                 <option value="other">Other</option>
               </select>
+              <div v-if="errors.gender" class="text-danger">
+                {{ errors.gender }}
+              </div>
             </div>
           </div>
 
@@ -72,8 +82,13 @@
               class="form-control"
               id="reason"
               rows="3"
+              @blur="() => validateReason(true)"
+              @input="() => validateReason(false)"
               v-model="formData.reason"
             ></textarea>
+            <div v-if="errors.reason" class="text-danger">
+              {{ errors.reason }}
+            </div>
           </div>
 
           <div class="text-center">
@@ -129,7 +144,10 @@
     const submitForm = () => {
       validateName(true); // Validate on submit
       validatePassword(true); // Validate password on submit
-      if (!errors.value.username && !errors.value.password) {
+      validateResident(true); // Validate resident status on submit
+      validateGender(true); // Validate gender on submit
+      validateReason(true); // Validate reason on submit
+      if (!errors.value.username && !errors.value.password && !errors.value.resident && !errors.value.gender && !errors.value.reason) {
         submittedCards.value.push({
             ...formData.value
         });
@@ -163,7 +181,7 @@
       }
     }
 
-    const validatePassword = () => {
+    const validatePassword = (blur) => {
       const password = formData.value.password;
       const minLength = 8;
       const hasUpperCase = /[A-Z]/.test(password);
@@ -172,17 +190,41 @@
       const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
       if (password.length < minLength) {
-        errors.value.password = `Password must be at least ${minLength} characters long.`;
+        if (blur) errors.value.password = `Password must be at least ${minLength} characters long.`;
       } else if (!hasUpperCase) {
-        errors.value.password = 'Password must contain at least one uppercase letter.';
+        if (blur) errors.value.password = 'Password must contain at least one uppercase letter.';
       } else if (!hasLowerCase) {
-        errors.value.password = 'Password must contain at least one lowercase letter.';
+        if (blur) errors.value.password = 'Password must contain at least one lowercase letter.';
       } else if (!hasNumber) {
-        errors.value.password = 'Password must contain at least one number.';
+        if (blur) errors.value.password = 'Password must contain at least one number.';
       } else if (!hasSpecialChar) {
-        errors.value.password = 'Password must contain at least one special character.';
+        if (blur) errors.value.password = 'Password must contain at least one special character.';
       } else {
         errors.value.password = null;
+      }
+    };
+
+    const validateResident = (blur) => {
+      if (!formData.value.isAustralian) {
+        if (blur) errors.value.resident = 'You must be an Australian resident.';
+      } else {
+        errors.value.resident = null;
+      }
+    };
+
+    const validateGender = (blur) => {
+      if (!formData.value.gender) {
+        if (blur) errors.value.gender = 'Please select a gender.';
+      } else {
+        errors.value.gender = null;
+      }
+    };
+
+    const validateReason = (blur) => {
+      if (!formData.value.reason) {
+        if (blur) errors.value.reason = 'Please provide a reason for joining.';
+      } else {
+        errors.value.reason = null;
       }
     };
 
