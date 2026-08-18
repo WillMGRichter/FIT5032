@@ -22,6 +22,24 @@
             </div>
 
             <div class="col-12 col-sm-6 col-md-6">
+                <label for="gender" class="form-label">Gender</label>
+                <select
+                  class="form-select"
+                  id="gender"
+                  @blur="() => validateGender(true)"
+                  @input="() => validateGender(false)"
+                  v-model="formData.gender"
+                >
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+                <div v-if="errors.gender" class="text-danger">
+                  {{ errors.gender }}
+                </div>
+              </div>
+            
+            <div class="col-12 col-sm-6 col-md-6">
               <label for="password" class="form-label">Password</label>
               <input
                 type="password"
@@ -33,6 +51,20 @@
               >
               <div v-if="errors.password" class="text-danger">
                 {{ errors.password }}
+              </div>
+            </div>
+
+            <div class="col-md-6 col-sm-6">
+              <label for="confirm-password" class="form-label">Confirm password</label>
+              <input
+                type="password"
+                class="form-control"
+                id="confirm-password"
+                v-model="formData.confirmPassword"
+                @blur="() => validateConfirmPassword(true)"
+              />
+              <div v-if="errors.confirmPassword" class="text-danger">
+                {{ errors.confirmPassword }}
               </div>
             </div>
           </div>
@@ -54,24 +86,6 @@
                 <div v-if="errors.resident" class="text-danger">
                   {{ errors.resident }}
                 </div>
-              </div>
-            </div>
-
-            <div class="col-12 col-sm-6 col-md-6">
-              <label for="gender" class="form-label">Gender</label>
-              <select
-                class="form-select"
-                id="gender"
-                @blur="() => validateGender(true)"
-                @input="() => validateGender(false)"
-                v-model="formData.gender"
-              >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-              <div v-if="errors.gender" class="text-danger">
-                {{ errors.gender }}
               </div>
             </div>
           </div>
@@ -148,6 +162,7 @@
     const formData = ref({
         username: '',
         password: '',
+        confirmPassword: '',
         isAustralian: false,
         reason: '',
         gender: ''
@@ -182,6 +197,7 @@
     const errors = ref({
         username: null,
         password: null,
+        confirmPassword: null,
         resident: null,
         gender: null,
         reason: null
@@ -241,6 +257,14 @@
         errors.value.reason = null;
       }
     };
+
+    const validateConfirmPassword = (blur) => {
+      if (formData.value.password !== formData.value.confirmPassword) {
+        if (blur) errors.value.confirmPassword = 'Passwords do not match.'
+      } else {
+        errors.value.confirmPassword = null
+      }
+    }
 
 </script>
 
