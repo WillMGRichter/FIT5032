@@ -1,26 +1,15 @@
-import { createApp } from 'vue'
-import App from './App.vue'
-
 import 'bootstrap/dist/css/bootstrap.min.css'
 
-import PrimeVue from 'primevue/config';
-import Aura from '@primeuix/themes/aura';
+import { createApp } from 'vue'
+import App from './App.vue'
+import router from './router'
 
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import ColumnGroup from 'primevue/columngroup';   // optional
-import Row from 'primevue/row';                   // optional
+import PrimeVue from 'primevue/config'
+import Aura from '@primevue/themes/aura'
 
-const app = createApp(App);
-app.use(PrimeVue, {
-    theme: {
-        present: Aura
-    }
-})
 
-app.component('DataTable', DataTable);
-app.component('Column', Column);
-app.component('ColumnGroup', ColumnGroup);
-app.component('Row', Row);
+const app = createApp(App)
+app.use(PrimeVue, { theme: { preset: Aura } })
+app.use(router)
 
 app.mount('#app')
