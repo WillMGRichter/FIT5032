@@ -1,6 +1,7 @@
 <script setup>
 import JSON from './components/JSON.vue'
-import Form from './components/LibraryRegistrationForm.vue'
+import Form from './views/HomeView.vue'
+
 </script>
 
 <template>
