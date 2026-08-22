@@ -1,11 +1,24 @@
 <script setup></script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <header>
+    <nav>
+      <ul>
+        <li><RouterLink to="/">Home</RouterLink></li>
+        <li><RouterLink to="/discover">Discover</RouterLink></li>
+        <li><RouterLink to="/projects/create">Create Project</RouterLink></li>
+        <li><RouterLink to="/projects/1">Project Details</RouterLink></li>
+        <li><RouterLink to="/projects/1/edit">Edit Project</RouterLink></li>
+        <li><RouterLink to="/about">About</RouterLink></li>
+        <li><RouterLink to="/login">Login</RouterLink></li>
+        <li><RouterLink to="/register">Register</RouterLink></li>
+        <li><RouterLink to="/profile">Profile</RouterLink></li>
+        <li><RouterLink to="/does-not-exist">Not Found (404)</RouterLink></li>
+      </ul>
+    </nav>
+  </header>
+
+  <RouterView />
 </template>
 
 <style scoped></style>
