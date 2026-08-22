@@ -7,7 +7,9 @@ import AppFooter from '@/components/navigation/AppFooter.vue'
   <div class="app-shell">
     <AppNavbar />
     <main class="app-main">
-      <RouterView />
+      <div class="container">
+        <RouterView />
+      </div>
     </main>
     <AppFooter />
   </div>
@@ -22,6 +24,7 @@ import AppFooter from '@/components/navigation/AppFooter.vue'
 
 .app-main {
   flex: 1;
-  padding: 1rem;
+  width: 100%;
+  padding-block: var(--spacing-lg);
 }
 </style>

@@ -2,14 +2,19 @@
 
 <template>
   <footer class="app-footer">
-    <p>MyProjectHub &copy; 2026</p>
+    <div class="container">
+      <p>MyProjectHub &copy; 2026</p>
+    </div>
   </footer>
 </template>
 
 <style scoped>
 .app-footer {
-  border-top: 1px solid #ccc;
-  padding: 0.75rem 1rem;
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding-block: var(--spacing-md);
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
 }
 
 .app-footer p {
