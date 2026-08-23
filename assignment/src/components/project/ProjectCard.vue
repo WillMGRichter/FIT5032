@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { formatDate } from '@/utils/formatDate'
 
 const props = defineProps({
   project: {
@@ -10,21 +11,11 @@ const props = defineProps({
 
 const imageFailed = ref(false)
 
-const dateFormatter = new Intl.DateTimeFormat('en-AU', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-})
-
-function parseDate(value) {
-  return value ? new Date(`${value}T00:00:00`) : null
-}
-
 const dateRange = computed(() => {
-  const start = parseDate(props.project.startDate)
-  const end = parseDate(props.project.endDate)
+  const start = formatDate(props.project.startDate)
+  const end = formatDate(props.project.endDate)
   if (!start || !end) return ''
-  return `${dateFormatter.format(start)} \u2013 ${dateFormatter.format(end)}`
+  return `${start} \u2013 ${end}`
 })
 
 const statusLabel = computed(() =>

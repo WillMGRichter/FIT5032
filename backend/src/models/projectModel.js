@@ -52,9 +52,11 @@ async function findAll({ status, categoryId } = {}) {
 async function findById(id) {
   const { rows } = await pool.query(
     `SELECT p.*, c.name AS category_name, c.description AS category_description,
+            u.id AS creator_id, u.full_name AS creator_name,
             (SELECT count(*) FROM project_participations pp WHERE pp.project_id = p.id) AS volunteer_count
        FROM projects p
        JOIN categories c ON c.id = p.category_id
+       LEFT JOIN users u ON u.id = p.created_by
       WHERE p.id = $1`,
     [id]
   )
@@ -64,6 +66,9 @@ async function findById(id) {
   const project = mapRow(rows[0])
   if (project.category) {
     project.category.description = rows[0].category_description
+  }
+  if (rows[0].creator_id) {
+    project.creator = { id: rows[0].creator_id, fullName: rows[0].creator_name }
   }
 
   const plantRows = await pool.query(
