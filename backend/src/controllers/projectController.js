@@ -19,4 +19,13 @@ async function getProjectById(req, res, next) {
   }
 }
 
-module.exports = { getProjects, getProjectById }
+async function createProject(req, res, next) {
+  try {
+    const project = await projectService.createProject(req.body)
+    res.status(201).json({ data: project })
+  } catch (error) {
+    next(error)
+  }
+}
+
+module.exports = { getProjects, getProjectById, createProject }

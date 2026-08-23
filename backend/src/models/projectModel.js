@@ -90,4 +90,29 @@ async function findById(id) {
   return project
 }
 
-module.exports = { findAll, findById }
+async function create(input) {
+  const { rows } = await pool.query(
+    `INSERT INTO projects
+       (title, description, category_id, location, latitude, longitude, image,
+        start_date, end_date, capacity, status, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+     RETURNING id`,
+    [
+      input.title,
+      input.description,
+      input.categoryId,
+      input.location,
+      input.latitude,
+      input.longitude,
+      input.image ?? null,
+      input.startDate,
+      input.endDate,
+      input.capacity,
+      input.status,
+      input.createdBy ?? null,
+    ]
+  )
+  return findById(rows[0].id)
+}
+
+module.exports = { findAll, findById, create }
