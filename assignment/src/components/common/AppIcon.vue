@@ -3,7 +3,18 @@ defineProps({
   name: {
     type: String,
     required: true,
-    validator: (value) => ['leaf', 'menu', 'close', 'search', 'users', 'sprout'].includes(value),
+    validator: (value) =>
+      [
+        'leaf',
+        'menu',
+        'close',
+        'search',
+        'users',
+        'sprout',
+        'thermometer',
+        'feather',
+        'map-pin',
+      ].includes(value),
   },
   size: {
     type: [Number, String],
@@ -61,6 +72,21 @@ defineProps({
       <path d="M12 22v-9" />
       <path d="M12 13c0-4.5 3.5-8 9-8 0 4.5-3.5 8-9 8Z" />
       <path d="M12 13c0-3.5-2.5-6-6-6 0 3.5 2.5 6 6 6Z" />
+    </template>
+
+    <template v-else-if="name === 'thermometer'">
+      <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />
+    </template>
+
+    <template v-else-if="name === 'feather'">
+      <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" />
+      <line x1="16" y1="8" x2="2" y2="22" />
+      <line x1="17.5" y1="15" x2="9" y2="15" />
+    </template>
+
+    <template v-else-if="name === 'map-pin'">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z" />
+      <circle cx="12" cy="10" r="3" />
     </template>
   </svg>
 </template>
