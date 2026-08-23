@@ -1,17 +1,11 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import FormInput from '@/components/forms/FormInput.vue'
-import FormTextarea from '@/components/forms/FormTextarea.vue'
-import FormSelect from '@/components/forms/FormSelect.vue'
+import ProjectFormFields from '@/components/forms/ProjectFormFields.vue'
 import { getProjectById, updateProject } from '@/services/projectService'
 import { getCategories } from '@/services/categoryService'
 import { ApiError } from '@/services/api'
-import {
-  PROJECT_STATUS_OPTIONS,
-  createEmptyProjectForm,
-  useProjectValidation,
-} from '@/composables/useProjectValidation'
+import { createEmptyProjectForm, useProjectValidation } from '@/composables/useProjectValidation'
 
 const route = useRoute()
 const router = useRouter()
@@ -74,8 +68,8 @@ watch(
   { immediate: true },
 )
 
-function fieldError(key) {
-  return errors[key] ?? ''
+function onFieldUpdate({ field, value }) {
+  form[field] = value
 }
 
 function buildPayload() {
@@ -163,115 +157,14 @@ async function handleSubmit() {
       </div>
 
       <form v-else class="edit__form" novalidate @submit.prevent="handleSubmit">
-        <fieldset class="edit__fieldset">
-          <legend>About the project</legend>
-          <FormInput
-            id="title"
-            v-model="form.title"
-            label="Project title"
-            type="text"
-            required
-            :error="fieldError('title')"
-          />
-          <FormTextarea
-            id="description"
-            v-model="form.description"
-            label="Description"
-            required
-            :error="fieldError('description')"
-          />
-          <FormSelect
-            id="categoryId"
-            v-model="form.categoryId"
-            label="Category"
-            placeholder="Choose a category"
-            :options="categories.map((category) => ({ value: category.id, label: category.name }))"
-            :error="fieldError('categoryId')"
-            required
-          />
-        </fieldset>
-
-        <fieldset class="edit__fieldset">
-          <legend>Where it happens</legend>
-          <FormInput
-            id="location"
-            v-model="form.location"
-            label="Location"
-            type="text"
-            required
-            :error="fieldError('location')"
-          />
-          <div class="edit__row">
-            <FormInput
-              id="latitude"
-              v-model="form.latitude"
-              label="Latitude"
-              type="number"
-              step="any"
-              min="-90"
-              max="90"
-              :error="fieldError('latitude')"
-            />
-            <FormInput
-              id="longitude"
-              v-model="form.longitude"
-              label="Longitude"
-              type="number"
-              step="any"
-              min="-180"
-              max="180"
-              :error="fieldError('longitude')"
-            />
-          </div>
-          <FormInput
-            id="image"
-            v-model="form.image"
-            label="Image URL (optional)"
-            type="url"
-            :error="fieldError('image')"
-          />
-        </fieldset>
-
-        <fieldset class="edit__fieldset">
-          <legend>When &amp; who</legend>
-          <div class="edit__row">
-            <FormInput
-              id="startDate"
-              v-model="form.startDate"
-              label="Start date"
-              type="date"
-              required
-              :error="fieldError('startDate')"
-            />
-            <FormInput
-              id="endDate"
-              v-model="form.endDate"
-              label="End date"
-              type="date"
-              required
-              :error="fieldError('endDate')"
-            />
-          </div>
-          <div class="edit__row">
-            <FormInput
-              id="capacity"
-              v-model="form.capacity"
-              label="Volunteer capacity"
-              type="number"
-              min="1"
-              step="1"
-              :error="fieldError('capacity')"
-            />
-            <FormSelect
-              id="status"
-              v-model="form.status"
-              label="Status"
-              placeholder=""
-              :options="PROJECT_STATUS_OPTIONS"
-              :error="fieldError('status')"
-            />
-          </div>
-        </fieldset>
+        <ProjectFormFields
+          :form="form"
+          :errors="errors"
+          :categories="categories"
+          id-prefix="edit"
+          :disabled="isSubmitting"
+          @update="onFieldUpdate"
+        />
 
         <div v-if="submitError" role="alert" class="edit__alert">{{ submitError }}</div>
 
@@ -348,35 +241,7 @@ async function handleSubmit() {
   max-width: 720px;
 }
 
-.edit__fieldset {
-  display: grid;
-  gap: var(--spacing-md);
-  margin: 0;
-  padding: var(--spacing-lg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background-color: var(--color-surface);
-}
-
-.edit__fieldset legend {
-  padding-inline: var(--spacing-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-primary-dark);
-}
-
-.edit__row {
-  display: grid;
-  gap: var(--spacing-md);
-}
-
-@media (min-width: 768px) {
-  .edit__row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 .edit__success {
-  max-width: 720px;
   padding: var(--spacing-xl);
   border: 1px solid var(--color-success);
   border-radius: var(--radius-lg);

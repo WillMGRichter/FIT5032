@@ -4,10 +4,12 @@ import FormError from './FormError.vue'
 defineProps({
   id: { type: String, required: true },
   label: { type: String, required: true },
-  modelValue: { type: String, default: '' },
+  modelValue: { type: [String, Number], default: '' },
   error: { type: String, default: '' },
   placeholder: { type: String, default: '' },
-  rows: { type: [String, Number], default: 4 },
+  min: { type: [String, Number], default: undefined },
+  max: { type: [String, Number], default: undefined },
+  step: { type: [String, Number], default: undefined },
   required: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
 })
@@ -21,17 +23,20 @@ defineEmits(['update:modelValue'])
       {{ label }}
       <span v-if="required" class="form-field__required" aria-hidden="true">*</span>
     </label>
-    <textarea
+    <input
       :id="id"
+      type="number"
       :value="modelValue"
       :placeholder="placeholder"
-      :rows="rows"
+      :min="min"
+      :max="max"
+      :step="step"
       :disabled="disabled"
       :aria-invalid="Boolean(error)"
       :aria-describedby="error ? `${id}-error` : undefined"
       class="form-field__control"
       @input="$emit('update:modelValue', $event.target.value)"
-    ></textarea>
+    />
     <FormError :id="`${id}-error`" :message="error" />
   </div>
 </template>
@@ -59,9 +64,7 @@ defineEmits(['update:modelValue'])
   border-radius: var(--radius-md);
   background-color: var(--color-surface);
   color: var(--color-text);
-  resize: vertical;
   min-width: 0;
-  font-family: inherit;
 }
 
 .form-field__control:disabled {

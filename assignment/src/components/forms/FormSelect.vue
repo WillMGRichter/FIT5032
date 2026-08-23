@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import FormError from './FormError.vue'
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -9,6 +10,7 @@ const props = defineProps({
   placeholder: { type: String, default: 'Please select an option' },
   options: { type: Array, default: () => [] },
   required: { type: Boolean, default: false },
+  disabled: { type: Boolean, default: false },
 })
 
 defineEmits(['update:modelValue'])
@@ -25,6 +27,7 @@ const hasPlaceholder = computed(() => props.placeholder !== '')
     <select
       :id="id"
       :value="modelValue"
+      :disabled="disabled"
       :aria-invalid="Boolean(error)"
       :aria-describedby="error ? `${id}-error` : undefined"
       class="form-field__control"
@@ -35,7 +38,7 @@ const hasPlaceholder = computed(() => props.placeholder !== '')
         {{ option.label }}
       </option>
     </select>
-    <p v-if="error" :id="`${id}-error`" class="form-field__message">{{ error }}</p>
+    <FormError :id="`${id}-error`" :message="error" />
   </div>
 </template>
 
@@ -65,12 +68,12 @@ const hasPlaceholder = computed(() => props.placeholder !== '')
   min-width: 0;
 }
 
-.form-field--error .form-field__control {
-  border-color: var(--color-error);
+.form-field__control:disabled {
+  background-color: var(--color-background);
+  cursor: not-allowed;
 }
 
-.form-field__message {
-  font-size: var(--font-size-sm);
-  color: var(--color-error);
+.form-field--error .form-field__control {
+  border-color: var(--color-error);
 }
 </style>
