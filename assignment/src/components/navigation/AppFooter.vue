@@ -6,6 +6,7 @@ const year = new Date().getFullYear()
 const exploreLinks = [
   { to: '/', label: 'Home' },
   { to: '/discover', label: 'Discover' },
+  { to: '/plants', label: 'Plants' },
   { to: '/about', label: 'About' },
 ]
 

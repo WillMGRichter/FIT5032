@@ -35,6 +35,16 @@ const routes = [
     component: () => import('@/views/AboutView.vue'),
   },
   {
+    path: '/plants',
+    name: 'plants',
+    component: () => import('@/views/PlantsView.vue'),
+  },
+  {
+    path: '/plants/:id',
+    name: 'plant-details',
+    component: () => import('@/views/PlantDetailsView.vue'),
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginView.vue'),

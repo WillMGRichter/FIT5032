@@ -12,6 +12,7 @@ const isMenuOpen = ref(false)
 const navItems = [
   { to: '/', label: 'Home' },
   { to: '/discover', label: 'Discover' },
+  { to: '/plants', label: 'Plants' },
   { to: '/about', label: 'About' },
 ]
 
