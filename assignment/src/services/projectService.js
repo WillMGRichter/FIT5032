@@ -30,6 +30,10 @@ export async function getParticipation(projectId) {
   return apiRequest(`/api/projects/${projectId}/participation`)
 }
 
+export async function getProjectPlants(projectId) {
+  return apiRequest(`/api/projects/${projectId}/plants`)
+}
+
 export async function joinProject(projectId) {
   return apiRequest(`/api/projects/${projectId}/participation`, { method: 'POST' })
 }

@@ -64,6 +64,15 @@ async function leaveProject(req, res, next) {
   }
 }
 
+async function getProjectPlants(req, res, next) {
+  try {
+    const plants = await projectService.getProjectPlants(req.params.id)
+    res.json({ data: plants })
+  } catch (error) {
+    next(error)
+  }
+}
+
 module.exports = {
   getProjects,
   getProjectById,
@@ -72,4 +81,5 @@ module.exports = {
   getParticipation,
   joinProject,
   leaveProject,
+  getProjectPlants,
 }

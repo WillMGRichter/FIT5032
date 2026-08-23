@@ -30,4 +30,12 @@ async function findById(id) {
   return rows.length ? mapRow(rows[0]) : null
 }
 
-module.exports = { findAll, findById }
+async function findByIds(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return []
+  const { rows } = await pool.query('SELECT * FROM plants WHERE id = ANY($1::bigint[]) ORDER BY common_name', [
+    ids,
+  ])
+  return rows.map(mapRow)
+}
+
+module.exports = { findAll, findById, findByIds }

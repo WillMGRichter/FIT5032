@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ProjectFormFields from '@/components/forms/ProjectFormFields.vue'
 import { getProjectById, updateProject } from '@/services/projectService'
 import { getCategories } from '@/services/categoryService'
+import { getPlants } from '@/services/plantService'
 import { ApiError } from '@/services/api'
 import { createEmptyProjectForm, useProjectValidation } from '@/composables/useProjectValidation'
 
@@ -18,6 +19,7 @@ const form = reactive(createEmptyProjectForm())
 const { errors, validate, applyServerErrors } = useProjectValidation(form)
 
 const categories = ref([])
+const plants = ref([])
 const isSubmitting = ref(false)
 const submitError = ref(null)
 const isSuccess = ref(false)
@@ -36,6 +38,7 @@ function populateForm(data) {
   form.endDate = data.endDate ?? ''
   form.capacity = data.capacity != null ? String(data.capacity) : ''
   form.status = data.status ?? 'planned'
+  form.plantIds = Array.isArray(data.plants) ? data.plants.map((plant) => plant.id) : []
 }
 
 async function loadPage(id) {
@@ -46,13 +49,18 @@ async function loadPage(id) {
   isSuccess.value = false
 
   try {
-    const [data, categoryData] = await Promise.all([getProjectById(id), getCategories()])
+    const [data, categoryData, plantData] = await Promise.all([
+      getProjectById(id),
+      getCategories(),
+      getPlants(),
+    ])
 
     if (data === null) return
     if (categoryData === null) throw new Error('Could not load categories.')
 
     project.value = data
-    categories.value = categoryData
+    categories.value = categoryData ?? []
+    plants.value = plantData ?? []
     populateForm(data)
   } catch (err) {
     loadError.value =
@@ -85,6 +93,7 @@ function buildPayload() {
     endDate: form.endDate,
     capacity: Number(form.capacity),
     status: form.status,
+    plantIds: [...form.plantIds],
   }
 }
 
@@ -161,6 +170,7 @@ async function handleSubmit() {
           :form="form"
           :errors="errors"
           :categories="categories"
+          :plants="plants"
           id-prefix="edit"
           :disabled="isSubmitting"
           @update="onFieldUpdate"

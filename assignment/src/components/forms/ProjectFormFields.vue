@@ -3,12 +3,14 @@ import FormInput from './FormInput.vue'
 import FormTextarea from './FormTextarea.vue'
 import FormSelect from './FormSelect.vue'
 import FormNumberInput from './FormNumberInput.vue'
+import FormCheckboxGroup from './FormCheckboxGroup.vue'
 import { PROJECT_STATUS_OPTIONS } from '@/composables/useProjectValidation'
 
 defineProps({
   form: { type: Object, required: true },
   errors: { type: Object, required: true },
   categories: { type: Array, default: () => [] },
+  plants: { type: Array, default: () => [] },
   idPrefix: { type: String, default: 'project' },
   disabled: { type: Boolean, default: false },
 })
@@ -145,6 +147,25 @@ function set(field, value) {
       />
     </div>
   </fieldset>
+
+  <fieldset class="project-fields__fieldset" :disabled="disabled">
+    <legend>Native plants</legend>
+    <FormCheckboxGroup
+      v-if="plants.length > 0"
+      name="plantIds"
+      label="Select the native species this project will plant (optional)"
+      :options="
+        plants.map((plant) => ({
+          value: plant.id,
+          label: `${plant.commonName} (${plant.scientificName})`,
+        }))
+      "
+      :model-value="form.plantIds"
+      :error="errors.plantIds ?? ''"
+      @update:model-value="set('plantIds', $event)"
+    />
+    <p v-else class="project-fields__hint">No native plants available to select right now.</p>
+  </fieldset>
 </template>
 
 <style scoped>
@@ -180,5 +201,11 @@ function set(field, value) {
   .project-fields__row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+.project-fields__hint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 </style>

@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import ProjectFormFields from '@/components/forms/ProjectFormFields.vue'
 import { createProject } from '@/services/projectService'
 import { getCategories } from '@/services/categoryService'
+import { getPlants } from '@/services/plantService'
 import { ApiError } from '@/services/api'
 import { createEmptyProjectForm, useProjectValidation } from '@/composables/useProjectValidation'
 
@@ -13,17 +14,20 @@ const form = reactive(createEmptyProjectForm())
 const { errors, validate, applyServerErrors } = useProjectValidation(form)
 
 const categories = ref([])
+const plants = ref([])
 const isLoading = ref(true)
 const isSubmitting = ref(false)
 const submitError = ref(null)
 const isSuccess = ref(false)
 
-async function loadCategories() {
+async function loadFormData() {
   isLoading.value = true
   try {
-    categories.value = (await getCategories()) ?? []
+    const [categoryList, plantList] = await Promise.all([getCategories(), getPlants()])
+    categories.value = categoryList ?? []
+    plants.value = plantList ?? []
   } catch {
-    submitError.value = 'Could not load project categories. Please refresh the page and try again.'
+    submitError.value = 'Could not load the form options. Please refresh the page and try again.'
   } finally {
     isLoading.value = false
   }
@@ -42,6 +46,7 @@ function buildPayload() {
     endDate: form.endDate,
     capacity: Number(form.capacity),
     status: form.status,
+    plantIds: [...form.plantIds],
   }
 }
 
@@ -80,7 +85,7 @@ function onFieldUpdate({ field, value }) {
   form[field] = value
 }
 
-loadCategories()
+loadFormData()
 </script>
 
 <template>
@@ -103,6 +108,7 @@ loadCategories()
         :form="form"
         :errors="errors"
         :categories="categories"
+        :plants="plants"
         id-prefix="create"
         :disabled="isSubmitting"
         @update="onFieldUpdate"

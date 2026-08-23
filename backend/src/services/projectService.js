@@ -1,5 +1,6 @@
 const projectModel = require('../models/projectModel')
 const categoryModel = require('../models/categoryModel')
+const plantModel = require('../models/plantModel')
 
 const VALID_STATUSES = ['planned', 'active', 'completed', 'cancelled']
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -180,8 +181,9 @@ function assertProjectId(id) {
 async function createProject(input) {
   assertJsonObject(input)
   const values = await validateProjectData(input)
+  const plantIds = await resolvePlantIds(input)
 
-  return projectModel.create({
+  const created = await projectModel.create({
     title: values.title,
     description: values.description,
     categoryId: values.categoryId,
@@ -194,6 +196,12 @@ async function createProject(input) {
     capacity: values.capacity,
     status: values.status,
   })
+
+  if (plantIds.length > 0) {
+    await projectModel.setProjectPlants(created.id, plantIds)
+    return projectModel.findById(created.id)
+  }
+  return created
 }
 
 async function updateProject(id, input) {
@@ -211,8 +219,9 @@ async function updateProject(id, input) {
 
   assertJsonObject(input)
   const values = await validateProjectData(input)
+  const plantIds = await resolvePlantIds(input)
 
-  return projectModel.update(projectId, {
+  const updated = await projectModel.update(projectId, {
     title: values.title,
     description: values.description,
     categoryId: values.categoryId,
@@ -225,6 +234,45 @@ async function updateProject(id, input) {
     capacity: values.capacity,
     status: values.status,
   })
+
+  await projectModel.setProjectPlants(projectId, plantIds)
+  return projectModel.findById(projectId) ?? updated
+}
+
+function extractPlantIds(input) {
+  const raw = input.plantIds ?? []
+  if (!Array.isArray(raw)) {
+    throw badRequest('Validation failed', { plantIds: 'Plant selection must be a list of ids.' })
+  }
+  const ids = [...new Set(raw.map((value) => Number(value)))]
+  if (ids.some((id) => !Number.isInteger(id) || id <= 0)) {
+    throw badRequest('Validation failed', { plantIds: 'Each selected plant must have a valid id.' })
+  }
+  return ids
+}
+
+async function resolvePlantIds(input) {
+  const plantIds = extractPlantIds(input)
+  if (plantIds.length === 0) return []
+
+  const existingPlants = await plantModel.findByIds(plantIds)
+  if (existingPlants.length !== plantIds.length) {
+    throw badRequest('Validation failed', {
+      plantIds: 'One or more selected plants do not exist.',
+    })
+  }
+  return plantIds
+}
+
+async function getProjectPlants(id) {
+  assertProjectId(id)
+  const project = await projectModel.findById(Number(id))
+  if (!project) {
+    const error = new Error(`Project with id ${id} not found`)
+    error.status = 404
+    throw error
+  }
+  return projectModel.findPlantsByProject(Number(id))
 }
 
 async function getProjectsCreatedBy(userId) {
@@ -302,4 +350,5 @@ module.exports = {
   getParticipationStatus,
   joinProject,
   leaveProject,
+  getProjectPlants,
 }

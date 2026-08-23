@@ -6,9 +6,11 @@ import {
   getParticipation,
   joinProject,
   leaveProject,
+  getProjectPlants,
 } from '@/services/projectService'
 import { ApiError } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
+import ProjectPlantList from '@/components/plant/ProjectPlantList.vue'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
@@ -17,6 +19,10 @@ const authStore = useAuthStore()
 const project = ref(null)
 const isLoading = ref(true)
 const error = ref(null)
+
+const projectPlants = ref([])
+const plantsLoading = ref(false)
+const plantsError = ref('')
 
 const isParticipating = ref(false)
 const isActionBusy = ref(false)
@@ -29,15 +35,33 @@ async function loadProject(id) {
   project.value = null
   isParticipating.value = false
   actionError.value = null
+  projectPlants.value = []
+  plantsLoading.value = true
+  plantsError.value = ''
   try {
     project.value = await getProjectById(id)
     await loadParticipation()
+    await loadPlants()
   } catch (err) {
     error.value =
       err && err.message ? err.message : 'Something went wrong while loading this project.'
     project.value = null
   } finally {
     isLoading.value = false
+  }
+}
+
+async function loadPlants() {
+  if (!project.value) return
+  plantsLoading.value = true
+  plantsError.value = ''
+  try {
+    projectPlants.value = (await getProjectPlants(project.value.id)) ?? []
+  } catch {
+    plantsError.value = 'Could not load the native plants for this project.'
+    projectPlants.value = []
+  } finally {
+    plantsLoading.value = false
   }
 }
 
@@ -238,17 +262,14 @@ const spotsRemaining = computed(() =>
 
           <h2 class="details__section-title">About this project</h2>
           <p class="details__description">{{ project.description }}</p>
+        </div>
 
-          <template v-if="project.plants && project.plants.length > 0">
-            <h2 class="details__section-title">Plant species</h2>
-            <ul class="details__plants">
-              <li v-for="plant in project.plants" :key="plant.id" class="details__plant">
-                <span class="details__plant-name">{{ plant.commonName }}</span>
-                <span class="details__plant-scientific">({{ plant.scientificName }})</span>
-                <span class="details__plant-quantity">&times;{{ plant.quantity }}</span>
-              </li>
-            </ul>
-          </template>
+        <div class="details__plants-section">
+          <ProjectPlantList
+            :plants="projectPlants"
+            :is-loading="plantsLoading"
+            :error="plantsError"
+          />
         </div>
       </article>
     </template>
@@ -517,30 +538,15 @@ const spotsRemaining = computed(() =>
   max-width: 70ch;
 }
 
-.details__plants {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
-}
-
-.details__plant {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+.details__plants-section {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
   background-color: var(--color-background);
-  font-size: var(--font-size-sm);
 }
 
-.details__plant-name {
-  font-weight: var(--font-weight-medium);
-}
-
-.details__plant-scientific {
-  color: var(--color-text-secondary);
-  font-style: italic;
-}
-
-.details__plant-quantity {
-  color: var(--color-primary);
+@media (min-width: 768px) {
+  .details__plants-section {
+    padding: var(--spacing-lg) var(--spacing-xl);
+  }
 }
 </style>

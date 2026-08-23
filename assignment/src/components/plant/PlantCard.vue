@@ -7,6 +7,10 @@ defineProps({
     type: Object,
     required: true,
   },
+  quantity: {
+    type: [Number, String],
+    default: null,
+  },
 })
 
 const imageFailed = ref(false)
@@ -33,6 +37,7 @@ function onImageError() {
       <span class="plant-card__maintenance" :data-level="plant.maintenanceLevel">
         {{ plant.maintenanceLevel }} maintenance
       </span>
+      <span v-if="quantity != null" class="plant-card__quantity">&times;{{ quantity }}</span>
     </div>
 
     <div class="plant-card__body">
@@ -113,6 +118,18 @@ function onImageError() {
 
 .plant-card__maintenance[data-level='high'] {
   color: var(--color-error);
+}
+
+.plant-card__quantity {
+  position: absolute;
+  bottom: var(--spacing-sm);
+  left: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-dark);
 }
 
 .plant-card__body {

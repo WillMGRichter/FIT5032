@@ -24,6 +24,7 @@ export function createEmptyProjectForm() {
     endDate: '',
     capacity: '',
     status: 'planned',
+    plantIds: [],
   }
 }
 

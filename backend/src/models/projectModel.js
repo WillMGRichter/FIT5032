@@ -229,6 +229,36 @@ async function deleteParticipation(projectId, userId) {
   return rowCount > 0
 }
 
+async function findPlantsByProject(projectId) {
+  const { rows } = await pool.query(
+    `SELECT pl.*, pp.quantity
+       FROM project_plants pp
+       JOIN plants pl ON pl.id = pp.plant_id
+      WHERE pp.project_id = $1
+      ORDER BY pl.common_name`,
+    [projectId]
+  )
+  return rows.map((row) => ({ ...mapRow(row), quantity: row.quantity }))
+}
+
+async function setProjectPlants(projectId, plantIds) {
+  await pool.query('DELETE FROM project_plants WHERE project_id = $1', [projectId])
+  if (!plantIds.length) return
+
+  const values = []
+  const params = []
+  plantIds.forEach((plantId, index) => {
+    values.push(`($1, $${index + 2})`)
+    params.push(plantId)
+  })
+  await pool.query(
+    `INSERT INTO project_plants (project_id, plant_id)
+     VALUES ${values.join(', ')}
+     ON CONFLICT (project_id, plant_id) DO NOTHING`,
+    [projectId, ...params]
+  )
+}
+
 module.exports = {
   findAll,
   findById,
@@ -239,4 +269,6 @@ module.exports = {
   countParticipations,
   createParticipation,
   deleteParticipation,
+  findPlantsByProject,
+  setProjectPlants,
 }
