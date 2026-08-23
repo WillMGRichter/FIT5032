@@ -229,6 +229,19 @@ async function deleteParticipation(projectId, userId) {
   return rowCount > 0
 }
 
+function mapPlantRow(row) {
+  return {
+    id: row.id,
+    commonName: row.common_name,
+    scientificName: row.scientific_name,
+    description: row.description,
+    image: row.image,
+    habitat: row.habitat,
+    maintenanceLevel: row.maintenance_level,
+    quantity: row.quantity,
+  }
+}
+
 async function findPlantsByProject(projectId) {
   const { rows } = await pool.query(
     `SELECT pl.*, pp.quantity
@@ -238,7 +251,7 @@ async function findPlantsByProject(projectId) {
       ORDER BY pl.common_name`,
     [projectId]
   )
-  return rows.map((row) => ({ ...mapRow(row), quantity: row.quantity }))
+  return rows.map(mapPlantRow)
 }
 
 async function setProjectPlants(projectId, plantIds) {
