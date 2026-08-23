@@ -221,4 +221,12 @@ async function updateProject(id, input) {
   })
 }
 
-module.exports = { getProjects, getProjectById, createProject, updateProject }
+async function getProjectsCreatedBy(userId) {
+  return projectModel.findAll({ createdBy: userId })
+}
+
+async function getProjectsJoinedBy(userId) {
+  return projectModel.findJoinedByUser(userId)
+}
+
+module.exports = { getProjects, getProjectById, createProject, updateProject, getProjectsCreatedBy, getProjectsJoinedBy }

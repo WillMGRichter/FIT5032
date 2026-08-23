@@ -54,6 +54,13 @@ function validationFailure(errors, status = 400) {
   return error
 }
 
+function badRequest(message, details = null) {
+  const error = new Error(message)
+  error.status = 400
+  if (details) error.details = details
+  return error
+}
+
 async function registerUser(input) {
   const { errors, firstName, lastName, email, password } = validateRegistration(input)
 
@@ -71,7 +78,8 @@ async function registerUser(input) {
 
   const user = await userModel.create({
     email,
-    fullName: `${firstName} ${lastName}`,
+    firstName,
+    lastName,
     passwordHash: hashPassword(password),
   })
 
@@ -103,7 +111,8 @@ async function loginUser({ email, password } = {}) {
   const user = {
     id: record.id,
     email: record.email,
-    fullName: record.full_name,
+    firstName: record.first_name,
+    lastName: record.last_name,
     role: record.role,
     createdAt: record.created_at,
   }
@@ -122,4 +131,70 @@ async function getUserForSession(sessionId) {
   return userModel.findById(session.userId)
 }
 
-module.exports = { registerUser, loginUser, logoutUser, getUserForSession }
+function validateProfileInput(input) {
+  const errors = {}
+  const firstName = String(input.firstName ?? '').trim()
+  const lastName = String(input.lastName ?? '').trim()
+  const email = String(input.email ?? '').trim()
+  const location = String(input.location ?? '').trim()
+  const bio = String(input.bio ?? '').trim()
+  let { profileImage } = input
+  profileImage = String(profileImage ?? '').trim()
+
+  if (!firstName) errors.firstName = 'First name is required.'
+  else if (firstName.length > 60) errors.firstName = 'First name must be 60 characters or fewer.'
+
+  if (!lastName) errors.lastName = 'Last name is required.'
+  else if (lastName.length > 60) errors.lastName = 'Last name must be 60 characters or fewer.'
+
+  if (!email) errors.email = 'Email is required.'
+  else if (email.length > 255) errors.email = 'Email must be 255 characters or fewer.'
+  else if (!EMAIL_PATTERN.test(email)) errors.email = 'Please enter a valid email address.'
+
+  if (location.length > 160) errors.location = 'Location must be 160 characters or fewer.'
+
+  if (bio.length > 500) errors.bio = 'Bio must be 500 characters or fewer.'
+
+  if (profileImage) {
+    if (!/^https?:\/\//i.test(profileImage)) {
+      errors.profileImage = 'Profile image must be a URL starting with http:// or https://.'
+    } else if (profileImage.length > 500) {
+      errors.profileImage = 'Profile image URL must be 500 characters or fewer.'
+    }
+  }
+
+  return {
+    errors,
+    values: {
+      firstName,
+      lastName,
+      email,
+      location: location || null,
+      bio: bio || null,
+      profileImage: profileImage || null,
+    },
+  }
+}
+
+async function updateUserProfile(userId, input) {
+  if (typeof input !== 'object' || input === null) {
+    throw badRequest('Request body must be a JSON object')
+  }
+
+  const { errors, values } = validateProfileInput(input)
+
+  if (Object.keys(errors).length === 0) {
+    const taken = await userModel.emailExistsExcept(values.email, userId)
+    if (taken) {
+      errors.email = 'An account with this email already exists.'
+    }
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw validationFailure(errors)
+  }
+
+  return userModel.update(userId, values)
+}
+
+module.exports = { registerUser, loginUser, logoutUser, getUserForSession, updateUserProfile }

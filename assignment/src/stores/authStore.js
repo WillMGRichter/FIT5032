@@ -41,6 +41,10 @@ async function logout() {
   }
 }
 
+function updateUser(user) {
+  state.user = user
+}
+
 export function useAuthStore() {
-  return { state, isAuthenticated, isLoading, init, login, register, logout }
+  return { state, isAuthenticated, isLoading, init, login, register, logout, updateUser }
 }

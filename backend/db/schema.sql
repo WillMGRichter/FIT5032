@@ -13,8 +13,12 @@ CREATE TABLE users (
   id            BIGSERIAL PRIMARY KEY,
   email         VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  full_name     VARCHAR(120) NOT NULL,
+  first_name    VARCHAR(60)  NOT NULL,
+  last_name     VARCHAR(60)  NOT NULL,
   role          VARCHAR(20)  NOT NULL DEFAULT 'member' CHECK (role IN ('member', 'admin')),
+  profile_image VARCHAR(500),
+  bio           VARCHAR(500),
+  location      VARCHAR(160),
   created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ  NOT NULL DEFAULT now()
 );

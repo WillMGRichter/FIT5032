@@ -21,7 +21,7 @@ function mapRow(row) {
   }
 }
 
-async function findAll({ status, categoryId } = {}) {
+async function findAll({ status, categoryId, createdBy } = {}) {
   const conditions = []
   const values = []
 
@@ -32,6 +32,10 @@ async function findAll({ status, categoryId } = {}) {
   if (categoryId) {
     values.push(categoryId)
     conditions.push(`p.category_id = $${values.length}`)
+  }
+  if (createdBy) {
+    values.push(createdBy)
+    conditions.push(`p.created_by = $${values.length}`)
   }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
@@ -52,7 +56,7 @@ async function findAll({ status, categoryId } = {}) {
 async function findById(id) {
   const { rows } = await pool.query(
     `SELECT p.*, c.name AS category_name, c.description AS category_description,
-            u.id AS creator_id, u.full_name AS creator_name,
+            u.id AS creator_id, u.first_name AS creator_first_name, u.last_name AS creator_last_name,
             (SELECT count(*) FROM project_participations pp WHERE pp.project_id = p.id) AS volunteer_count
        FROM projects p
        JOIN categories c ON c.id = p.category_id
@@ -68,7 +72,10 @@ async function findById(id) {
     project.category.description = rows[0].category_description
   }
   if (rows[0].creator_id) {
-    project.creator = { id: rows[0].creator_id, fullName: rows[0].creator_name }
+    project.creator = {
+      id: rows[0].creator_id,
+      fullName: `${rows[0].creator_first_name} ${rows[0].creator_last_name}`,
+    }
   }
 
   const plantRows = await pool.query(
@@ -151,4 +158,26 @@ async function update(id, input) {
   return findById(id)
 }
 
-module.exports = { findAll, findById, create, update }
+async function findJoinedByUser(userId) {
+  const { rows } = await pool.query(
+    `SELECT p.*, c.name AS category_name,
+            pp.role AS participation_role, pp.joined_at AS participation_joined_at,
+            (SELECT count(*) FROM project_participations pp2 WHERE pp2.project_id = p.id) AS volunteer_count
+       FROM project_participations pp
+       JOIN projects p ON p.id = pp.project_id
+       JOIN categories c ON c.id = p.category_id
+      WHERE pp.user_id = $1
+      ORDER BY p.start_date`,
+    [userId]
+  )
+
+  return rows.map((row) => ({
+    ...mapRow(row),
+    participation: {
+      role: row.participation_role,
+      joinedAt: row.participation_joined_at,
+    },
+  }))
+}
+
+module.exports = { findAll, findById, create, update, findJoinedByUser }
