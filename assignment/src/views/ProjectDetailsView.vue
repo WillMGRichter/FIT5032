@@ -167,6 +167,7 @@ const spotsRemaining = computed(() =>
 
 .details__actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: var(--spacing-md);
   margin-top: var(--spacing-md);
@@ -210,7 +211,7 @@ const spotsRemaining = computed(() =>
 
 .details__media {
   position: relative;
-  aspect-ratio: 21 / 9;
+  aspect-ratio: 16 / 10;
   background-color: var(--color-border);
 }
 
@@ -218,6 +219,10 @@ const spotsRemaining = computed(() =>
 .details__media-fallback {
   width: 100%;
   height: 100%;
+}
+
+.details__media img {
+  object-fit: cover;
 }
 
 .details__media-fallback {
@@ -252,7 +257,13 @@ const spotsRemaining = computed(() =>
 }
 
 .details__body {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .details__body {
+    padding: var(--spacing-xl);
+  }
 }
 
 .details__category {
@@ -263,6 +274,17 @@ const spotsRemaining = computed(() =>
   letter-spacing: 0.04em;
 }
 
+.details__edit {
+  display: inline-block;
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
 .details__title {
   margin-top: var(--spacing-xs);
 }
@@ -270,17 +292,6 @@ const spotsRemaining = computed(() =>
 .details__location {
   margin-top: var(--spacing-xs);
   color: var(--color-text-secondary);
-}
-
-.details__edit {
-  display: inline-block;
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-xs) var(--spacing-md);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-md);
-  color: var(--color-primary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
 }
 
 .details__edit:hover {

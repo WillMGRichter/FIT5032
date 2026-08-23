@@ -104,6 +104,10 @@ function onImageError() {
   height: 100%;
 }
 
+.project-card__image {
+  object-fit: cover;
+}
+
 .project-card__media-fallback {
   display: flex;
   align-items: center;
@@ -184,14 +188,16 @@ function onImageError() {
 
 .project-card__footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm) var(--spacing-md);
   padding: var(--spacing-md);
   border-top: 1px solid var(--color-border);
 }
 
 .project-card__meta {
+  min-width: 0;
   font-size: var(--font-size-sm);
 }
 
@@ -204,7 +210,8 @@ function onImageError() {
 }
 
 .project-card__action {
-  padding: var(--spacing-sm) var(--spacing-md);
+  flex-shrink: 0;
+  padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--radius-md);
   background-color: var(--color-primary);
   color: var(--color-surface);

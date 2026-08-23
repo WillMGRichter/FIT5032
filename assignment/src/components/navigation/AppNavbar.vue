@@ -87,6 +87,8 @@ function closeMenu() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   padding: var(--spacing-xs);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -121,7 +123,7 @@ function closeMenu() {
 }
 
 .nav-links a {
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
   color: var(--color-text-secondary);
   font-size: var(--font-size-md);
   white-space: nowrap;

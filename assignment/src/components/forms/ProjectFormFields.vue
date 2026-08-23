@@ -152,10 +152,17 @@ function set(field, value) {
   display: grid;
   gap: var(--spacing-md);
   margin: 0;
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background-color: var(--color-surface);
+}
+
+@media (min-width: 768px) {
+  .project-fields__fieldset {
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+  }
 }
 
 .project-fields__fieldset legend {

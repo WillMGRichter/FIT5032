@@ -168,12 +168,13 @@ loadCategories()
 
 .create__actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md) var(--spacing-lg);
 }
 
 .create__submit {
-  padding: var(--spacing-sm) var(--spacing-xl);
+  padding: var(--spacing-md) var(--spacing-xl);
   border: none;
   border-radius: var(--radius-md);
   background-color: var(--color-primary);

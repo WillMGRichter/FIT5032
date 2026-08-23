@@ -167,11 +167,31 @@ onMounted(loadPage)
   background-color: var(--color-primary-dark);
 }
 
+/* Small tablets: search full-width, filters side by side */
+@media (min-width: 576px) {
+  .discover__toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-md);
+  }
+
+  .discover__search {
+    grid-column: 1 / -1;
+  }
+
+  .discover__button--clear {
+    justify-self: start;
+  }
+}
+
+/* Desktop: single-row toolbar */
 @media (min-width: 768px) {
   .discover__toolbar {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
     align-items: center;
-    gap: var(--spacing-md);
+  }
+
+  .discover__search {
+    grid-column: auto;
   }
 
   .discover__button--clear {
@@ -212,11 +232,17 @@ onMounted(loadPage)
 
 .discover__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: var(--spacing-lg);
 }
 
 .discover__item {
   display: flex;
+}
+
+@media (min-width: 1200px) {
+  .discover__grid {
+    gap: var(--spacing-xl);
+  }
 }
 </style>

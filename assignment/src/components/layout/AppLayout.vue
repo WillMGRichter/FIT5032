@@ -27,4 +27,16 @@ import AppFooter from '@/components/navigation/AppFooter.vue'
   width: 100%;
   padding-block: var(--spacing-lg);
 }
+
+@media (min-width: 768px) {
+  .app-main {
+    padding-block: var(--spacing-xl);
+  }
+}
+
+@media (min-width: 1200px) {
+  .app-main {
+    padding-block: var(--spacing-2xl);
+  }
+}
 </style>
