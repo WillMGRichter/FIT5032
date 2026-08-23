@@ -14,7 +14,7 @@ async function register(req, res, next) {
 
 async function login(req, res, next) {
   try {
-    const { user, sessionId } = await authService.login(req.body)
+    const { user, sessionId } = await authService.loginUser(req.body)
     setSessionCookie(res, sessionId)
     res.json({ data: { user } })
   } catch (error) {
