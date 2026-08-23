@@ -40,6 +40,7 @@ async function request(path, { method = 'GET', body, query } = {}) {
   if (!response.ok) {
     throw new ApiError(payload?.error || `Request failed: ${method} ${path}`, {
       status: response.status,
+      details: payload ?? null,
     })
   }
 

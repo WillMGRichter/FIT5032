@@ -6,6 +6,7 @@ import FormTextarea from '@/components/forms/FormTextarea.vue'
 import FormSelect from '@/components/forms/FormSelect.vue'
 import { createProject } from '@/services/projectService'
 import { getCategories } from '@/services/categoryService'
+import { ApiError } from '@/services/api'
 
 const router = useRouter()
 
@@ -143,8 +144,15 @@ async function handleSubmit() {
       router.push({ name: 'project-details', params: { id: created.id } })
     }, 1200)
   } catch (err) {
-    submitError.value =
-      err && err.message ? err.message : 'Something went wrong while creating the project.'
+    if (err instanceof ApiError && err.status === 400 && err.details?.errors) {
+      Object.keys(errors).forEach((key) => delete errors[key])
+      Object.assign(errors, err.details.errors)
+      submitError.value =
+        'The server rejected some of these values. Please review the highlighted fields.'
+    } else {
+      submitError.value =
+        err && err.message ? err.message : 'Something went wrong while creating the project.'
+    }
   } finally {
     isSubmitting.value = false
   }
