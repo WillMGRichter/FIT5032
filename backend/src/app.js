@@ -5,13 +5,18 @@ const cors = require('cors')
 const projectRoutes = require('./routes/projectRoutes')
 const categoryRoutes = require('./routes/categoryRoutes')
 const plantRoutes = require('./routes/plantRoutes')
+const authRoutes = require('./routes/authRoutes')
 const notFound = require('./middleware/notFound')
 const errorHandler = require('./middleware/errorHandler')
+const { attachUser } = require('./middleware/auth')
 
 const app = express()
 
-app.use(cors())
+const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+
+app.use(cors({ origin: clientOrigin, credentials: true }))
 app.use(express.json())
+app.use(attachUser)
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' })
@@ -20,6 +25,7 @@ app.get('/health', (req, res) => {
 app.use('/api/projects', projectRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/plants', plantRoutes)
+app.use('/api/auth', authRoutes)
 
 app.use(notFound)
 app.use(errorHandler)

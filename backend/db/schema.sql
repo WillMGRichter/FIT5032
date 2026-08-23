@@ -3,6 +3,7 @@
 
 DROP TABLE IF EXISTS project_plants CASCADE;
 DROP TABLE IF EXISTS project_participations CASCADE;
+DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
 DROP TABLE IF EXISTS plants CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
@@ -56,6 +57,13 @@ CREATE TABLE projects (
   CHECK (end_date >= start_date)
 );
 
+CREATE TABLE sessions (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '7 days'
+);
+
 CREATE TABLE project_participations (
   id         BIGSERIAL PRIMARY KEY,
   project_id BIGINT      NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
@@ -77,3 +85,4 @@ CREATE INDEX idx_projects_category ON projects (category_id);
 CREATE INDEX idx_projects_status ON projects (status);
 CREATE INDEX idx_participations_user ON project_participations (user_id);
 CREATE INDEX idx_project_plants_plant ON project_plants (plant_id);
+CREATE INDEX idx_sessions_user ON sessions (user_id);

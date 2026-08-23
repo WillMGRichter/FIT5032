@@ -1,6 +1,11 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
+import { useAuthStore } from '@/stores/authStore'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const isMenuOpen = ref(false)
 
@@ -8,7 +13,6 @@ const navItems = [
   { to: '/', label: 'Home' },
   { to: '/discover', label: 'Discover' },
   { to: '/about', label: 'About' },
-  { to: '/profile', label: 'Profile' },
 ]
 
 function toggleMenu() {
@@ -17,6 +21,12 @@ function toggleMenu() {
 
 function closeMenu() {
   isMenuOpen.value = false
+}
+
+async function handleLogout() {
+  closeMenu()
+  await authStore.logout()
+  router.push({ name: 'home' })
 }
 </script>
 
@@ -48,6 +58,23 @@ function closeMenu() {
         <RouterLink v-for="item in navItems" :key="item.to" :to="item.to" @click="closeMenu">
           {{ item.label }}
         </RouterLink>
+
+        <template v-if="authStore.isAuthenticated.value">
+          <RouterLink
+            to="/profile"
+            class="nav-links__account"
+            @click="closeMenu"
+          >
+            Profile
+          </RouterLink>
+          <button type="button" class="nav-links__logout" @click="handleLogout">Logout</button>
+        </template>
+        <template v-else>
+          <RouterLink to="/login" class="nav-links__account" @click="closeMenu">Login</RouterLink>
+          <RouterLink to="/register" class="nav-links__cta" @click="closeMenu">
+            Register
+          </RouterLink>
+        </template>
       </nav>
     </div>
   </header>
@@ -144,6 +171,20 @@ function closeMenu() {
   text-underline-offset: 6px;
 }
 
+.nav-links__logout {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  background: none;
+  color: var(--color-error);
+  font-size: var(--font-size-md);
+  text-align: left;
+}
+
+.nav-links__logout:hover {
+  color: var(--color-error);
+  text-decoration: underline;
+}
+
 @media (min-width: 768px) {
   .menu-toggle {
     display: none;
@@ -165,6 +206,24 @@ function closeMenu() {
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--radius-sm);
     white-space: nowrap;
+  }
+
+  .nav-links__logout {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: inherit;
+  }
+
+  .nav-links__cta {
+    padding: var(--spacing-xs) var(--spacing-lg);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .nav-links__cta:hover {
+    background-color: var(--color-primary);
+    color: var(--color-surface);
   }
 }
 </style>

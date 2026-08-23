@@ -22,7 +22,7 @@ function buildUrl(path, query) {
 async function request(path, { method = 'GET', body, query } = {}) {
   const url = buildUrl(path, query)
 
-  const fetchOptions = { method }
+  const fetchOptions = { method, credentials: 'include' }
   if (body !== undefined) {
     fetchOptions.headers = { 'Content-Type': 'application/json' }
     fetchOptions.body = JSON.stringify(body)
