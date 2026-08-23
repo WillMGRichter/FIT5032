@@ -1,22 +1,37 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { getProjectById } from '@/services/projectService'
+import {
+  getProjectById,
+  getParticipation,
+  joinProject,
+  leaveProject,
+} from '@/services/projectService'
+import { ApiError } from '@/services/api'
+import { useAuthStore } from '@/stores/authStore'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
+const authStore = useAuthStore()
 
 const project = ref(null)
 const isLoading = ref(true)
 const error = ref(null)
+
+const isParticipating = ref(false)
+const isActionBusy = ref(false)
+const actionError = ref(null)
 
 async function loadProject(id) {
   if (!id) return
   isLoading.value = true
   error.value = null
   project.value = null
+  isParticipating.value = false
+  actionError.value = null
   try {
     project.value = await getProjectById(id)
+    await loadParticipation()
   } catch (err) {
     error.value =
       err && err.message ? err.message : 'Something went wrong while loading this project.'
@@ -26,11 +41,70 @@ async function loadProject(id) {
   }
 }
 
+async function loadParticipation() {
+  isParticipating.value = false
+  if (!authStore.isAuthenticated.value || !project.value) return
+  try {
+    const status = await getParticipation(project.value.id)
+    isParticipating.value = Boolean(status?.participating)
+  } catch {
+    isParticipating.value = false
+  }
+}
+
 watch(
   () => route.params.id,
   (id) => loadProject(id),
   { immediate: true },
 )
+
+const isOpenForParticipation = computed(() => ['planned', 'active'].includes(project.value?.status))
+
+const hasSpotsRemaining = computed(() => spotsRemaining.value > 0)
+
+async function handleJoin() {
+  if (isActionBusy.value || !project.value) return
+
+  actionError.value = null
+  isActionBusy.value = true
+  try {
+    const result = await joinProject(project.value.id)
+    project.value.volunteerCount = result.volunteerCount
+    isParticipating.value = true
+  } catch (err) {
+    actionError.value =
+      err instanceof ApiError && err.status === 401
+        ? 'Your session expired. Please log in again.'
+        : err && err.message
+          ? err.message
+          : 'Something went wrong while joining this project.'
+    if (err instanceof ApiError && [404, 409].includes(err.status)) {
+      await loadProject(route.params.id)
+    }
+  } finally {
+    isActionBusy.value = false
+  }
+}
+
+async function handleLeave() {
+  if (isActionBusy.value || !project.value) return
+
+  actionError.value = null
+  isActionBusy.value = true
+  try {
+    const result = await leaveProject(project.value.id)
+    project.value.volunteerCount = result.volunteerCount
+    isParticipating.value = false
+  } catch (err) {
+    actionError.value =
+      err && err.message ? err.message : 'Something went wrong while leaving this project.'
+    if (err instanceof ApiError && [401, 404].includes(err.status)) {
+      await loadProject(route.params.id)
+    }
+  } finally {
+    isActionBusy.value = false
+  }
+}
 
 const statusLabel = computed(() =>
   project.value?.status
@@ -123,6 +197,44 @@ const spotsRemaining = computed(() =>
               <dd>{{ project.creator.fullName }}</dd>
             </div>
           </dl>
+
+          <div class="details__participation">
+            <RouterLink
+              v-if="!authStore.isAuthenticated.value"
+              :to="{ name: 'login', query: { redirect: route.fullPath } }"
+              class="details__join"
+            >
+              Log in to join
+            </RouterLink>
+
+            <template v-else-if="isOpenForParticipation">
+              <template v-if="isParticipating">
+                <span class="details__joined-note">You're signed up as a volunteer.</span>
+                <button
+                  type="button"
+                  class="details__leave"
+                  :disabled="isActionBusy"
+                  @click="handleLeave"
+                >
+                  {{ isActionBusy ? 'Leaving…' : 'Leave project' }}
+                </button>
+              </template>
+              <button
+                v-else-if="hasSpotsRemaining"
+                type="button"
+                class="details__join"
+                :disabled="isActionBusy"
+                @click="handleJoin"
+              >
+                {{ isActionBusy ? 'Joining…' : 'Join Project' }}
+              </button>
+              <span v-else class="details__state-pill details__state-pill--full">Project Full</span>
+            </template>
+
+            <span v-else class="details__state-pill">Registration Closed</span>
+          </div>
+
+          <p v-if="actionError" role="alert" class="details__action-error">{{ actionError }}</p>
 
           <h2 class="details__section-title">About this project</h2>
           <p class="details__description">{{ project.description }}</p>
@@ -322,6 +434,78 @@ const spotsRemaining = computed(() =>
   margin: 0;
   margin-top: var(--spacing-xs);
   font-weight: var(--font-weight-medium);
+}
+
+.details__participation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-block-end: var(--spacing-lg);
+}
+
+.details__join {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: var(--spacing-sm) var(--spacing-xl);
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  font-weight: var(--font-weight-semibold);
+}
+
+.details__join:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.details__leave {
+  min-height: 44px;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-error);
+  font-weight: var(--font-weight-semibold);
+}
+
+.details__leave:hover:not(:disabled) {
+  background-color: var(--color-error);
+  color: var(--color-surface);
+}
+
+.details__joined-note {
+  color: var(--color-success);
+  font-weight: var(--font-weight-medium);
+}
+
+.details__state-pill,
+.details__state-pill--full,
+.details__join:disabled,
+.details__leave:disabled {
+  opacity: 0.7;
+}
+
+.details__state-pill,
+.details__state-pill--full {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.details__action-error {
+  margin-block-end: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  background-color: #fdecea;
+  color: var(--color-error);
 }
 
 .details__section-title {

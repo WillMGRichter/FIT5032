@@ -180,4 +180,63 @@ async function findJoinedByUser(userId) {
   }))
 }
 
-module.exports = { findAll, findById, create, update, findJoinedByUser }
+async function findParticipation(projectId, userId) {
+  const { rows } = await pool.query(
+    'SELECT project_id, user_id, role, joined_at FROM project_participations WHERE project_id = $1 AND user_id = $2',
+    [projectId, userId],
+  )
+  return rows[0]
+    ? {
+        projectId: rows[0].project_id,
+        userId: rows[0].user_id,
+        role: rows[0].role,
+        joinedAt: rows[0].joined_at,
+      }
+    : null
+}
+
+async function countParticipations(projectId) {
+  const { rows } = await pool.query(
+    'SELECT count(*)::int AS total FROM project_participations WHERE project_id = $1',
+    [projectId],
+  )
+  return rows[0].total
+}
+
+async function createParticipation(projectId, userId, role = 'volunteer') {
+  const { rows } = await pool.query(
+    `INSERT INTO project_participations (project_id, user_id, role)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (project_id, user_id) DO NOTHING
+     RETURNING project_id, user_id, role, joined_at`,
+    [projectId, userId, role],
+  )
+  return rows[0]
+    ? {
+        projectId: rows[0].project_id,
+        userId: rows[0].user_id,
+        role: rows[0].role,
+        joinedAt: rows[0].joined_at,
+      }
+    : null
+}
+
+async function deleteParticipation(projectId, userId) {
+  const { rowCount } = await pool.query(
+    'DELETE FROM project_participations WHERE project_id = $1 AND user_id = $2',
+    [projectId, userId],
+  )
+  return rowCount > 0
+}
+
+module.exports = {
+  findAll,
+  findById,
+  create,
+  update,
+  findJoinedByUser,
+  findParticipation,
+  countParticipations,
+  createParticipation,
+  deleteParticipation,
+}

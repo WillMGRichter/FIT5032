@@ -23,7 +23,19 @@ export async function createProject(project) {
 }
 
 export async function updateProject(id, project) {
-  return apiRequest(`/api/projects/${encodeURIComponent(id)}`, { method: 'PUT', body: project })
+  return apiRequest(`/api/projects/${id}`, { method: 'PUT', body: project })
+}
+
+export async function getParticipation(projectId) {
+  return apiRequest(`/api/projects/${projectId}/participation`)
+}
+
+export async function joinProject(projectId) {
+  return apiRequest(`/api/projects/${projectId}/participation`, { method: 'POST' })
+}
+
+export async function leaveProject(projectId) {
+  return apiRequest(`/api/projects/${projectId}/participation`, { method: 'DELETE' })
 }
 
 export async function deleteProject(id) {

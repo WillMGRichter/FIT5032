@@ -37,4 +37,39 @@ async function updateProject(req, res, next) {
   }
 }
 
-module.exports = { getProjects, getProjectById, createProject, updateProject }
+async function getParticipation(req, res, next) {
+  try {
+    const status = await projectService.getParticipationStatus(req.params.id, req.user.id)
+    res.json({ data: status })
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function joinProject(req, res, next) {
+  try {
+    const result = await projectService.joinProject(req.params.id, req.user.id)
+    res.status(201).json({ data: result })
+  } catch (error) {
+    next(error)
+  }
+}
+
+async function leaveProject(req, res, next) {
+  try {
+    const result = await projectService.leaveProject(req.params.id, req.user.id)
+    res.json({ data: result })
+  } catch (error) {
+    next(error)
+  }
+}
+
+module.exports = {
+  getProjects,
+  getProjectById,
+  createProject,
+  updateProject,
+  getParticipation,
+  joinProject,
+  leaveProject,
+}

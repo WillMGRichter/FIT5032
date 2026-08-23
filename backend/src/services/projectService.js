@@ -171,6 +171,12 @@ function assertJsonObject(input) {
   }
 }
 
+function assertProjectId(id) {
+  if (!Number.isInteger(Number(id))) {
+    throw badRequest('Project id must be a number')
+  }
+}
+
 async function createProject(input) {
   assertJsonObject(input)
   const values = await validateProjectData(input)
@@ -229,4 +235,71 @@ async function getProjectsJoinedBy(userId) {
   return projectModel.findJoinedByUser(userId)
 }
 
-module.exports = { getProjects, getProjectById, createProject, updateProject, getProjectsCreatedBy, getProjectsJoinedBy }
+function participationError(message, status) {
+  const error = new Error(message)
+  error.status = status
+  return error
+}
+
+async function getParticipationStatus(projectId, userId) {
+  assertProjectId(projectId)
+  const participation = await projectModel.findParticipation(projectId, userId)
+  return { participating: Boolean(participation), role: participation?.role ?? null }
+}
+
+async function joinProject(projectId, userId) {
+  assertProjectId(projectId)
+
+  const project = await projectModel.findById(projectId)
+  if (!project) {
+    throw participationError(`Project with id ${projectId} not found`, 404)
+  }
+
+  if (project.status === 'cancelled' || project.status === 'completed') {
+    throw participationError('This project is no longer accepting participants.', 409)
+  }
+
+  const existing = await projectModel.findParticipation(projectId, userId)
+  if (existing) {
+    throw participationError('You have already joined this project.', 409)
+  }
+
+  const volunteerCount = await projectModel.countParticipations(projectId)
+  if (volunteerCount >= project.capacity) {
+    throw participationError('This project has reached its volunteer capacity.', 409)
+  }
+
+  const participation = await projectModel.createParticipation(projectId, userId)
+  if (!participation) {
+    throw participationError('You have already joined this project.', 409)
+  }
+
+  return {
+    participation,
+    volunteerCount: volunteerCount + 1,
+  }
+}
+
+async function leaveProject(projectId, userId) {
+  assertProjectId(projectId)
+
+  const removed = await projectModel.deleteParticipation(projectId, userId)
+  if (!removed) {
+    throw participationError('You are not participating in this project.', 404)
+  }
+
+  const volunteerCount = await projectModel.countParticipations(projectId)
+  return { success: true, volunteerCount }
+}
+
+module.exports = {
+  getProjects,
+  getProjectById,
+  createProject,
+  updateProject,
+  getProjectsCreatedBy,
+  getProjectsJoinedBy,
+  getParticipationStatus,
+  joinProject,
+  leaveProject,
+}
