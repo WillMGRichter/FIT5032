@@ -148,11 +148,7 @@ async function getProjectById(id) {
   return project
 }
 
-async function createProject(input) {
-  if (!input || typeof input !== 'object' || Array.isArray(input)) {
-    throw badRequest('Request body must be a JSON object')
-  }
-
+async function validateProjectData(input) {
   const { errors, values } = validateProjectInput(input)
 
   if (values.categoryId && !errors.categoryId) {
@@ -165,6 +161,19 @@ async function createProject(input) {
   if (Object.keys(errors).length > 0) {
     throw badRequest('Validation failed', errors)
   }
+
+  return values
+}
+
+function assertJsonObject(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    throw badRequest('Request body must be a JSON object')
+  }
+}
+
+async function createProject(input) {
+  assertJsonObject(input)
+  const values = await validateProjectData(input)
 
   return projectModel.create({
     title: values.title,
@@ -181,4 +190,35 @@ async function createProject(input) {
   })
 }
 
-module.exports = { getProjects, getProjectById, createProject }
+async function updateProject(id, input) {
+  const projectId = Number(id)
+  if (!Number.isInteger(projectId)) {
+    throw badRequest('Project id must be a number')
+  }
+
+  const existing = await projectModel.findById(projectId)
+  if (!existing) {
+    const error = new Error(`Project with id ${projectId} not found`)
+    error.status = 404
+    throw error
+  }
+
+  assertJsonObject(input)
+  const values = await validateProjectData(input)
+
+  return projectModel.update(projectId, {
+    title: values.title,
+    description: values.description,
+    categoryId: values.categoryId,
+    location: values.location,
+    latitude: values.latitude,
+    longitude: values.longitude,
+    image: values.image,
+    startDate: values.startDate,
+    endDate: values.endDate,
+    capacity: values.capacity,
+    status: values.status,
+  })
+}
+
+module.exports = { getProjects, getProjectById, createProject, updateProject }

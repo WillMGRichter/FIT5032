@@ -28,4 +28,13 @@ async function createProject(req, res, next) {
   }
 }
 
-module.exports = { getProjects, getProjectById, createProject }
+async function updateProject(req, res, next) {
+  try {
+    const project = await projectService.updateProject(req.params.id, req.body)
+    res.json({ data: project })
+  } catch (error) {
+    next(error)
+  }
+}
+
+module.exports = { getProjects, getProjectById, createProject, updateProject }

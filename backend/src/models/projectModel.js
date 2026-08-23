@@ -115,4 +115,40 @@ async function create(input) {
   return findById(rows[0].id)
 }
 
-module.exports = { findAll, findById, create }
+async function update(id, input) {
+  const result = await pool.query(
+    `UPDATE projects SET
+       title = $2,
+       description = $3,
+       category_id = $4,
+       location = $5,
+       latitude = $6,
+       longitude = $7,
+       image = $8,
+       start_date = $9,
+       end_date = $10,
+       capacity = $11,
+       status = $12,
+       updated_at = now()
+     WHERE id = $1`,
+    [
+      id,
+      input.title,
+      input.description,
+      input.categoryId,
+      input.location,
+      input.latitude,
+      input.longitude,
+      input.image ?? null,
+      input.startDate,
+      input.endDate,
+      input.capacity,
+      input.status,
+    ]
+  )
+
+  if (result.rowCount === 0) return null
+  return findById(id)
+}
+
+module.exports = { findAll, findById, create, update }

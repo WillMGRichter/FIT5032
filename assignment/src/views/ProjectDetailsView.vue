@@ -97,6 +97,12 @@ const spotsRemaining = computed(() =>
             <p class="details__category">{{ project.category?.name }}</p>
             <h1 class="details__title">{{ project.title }}</h1>
             <p class="details__location">{{ project.location }}</p>
+            <RouterLink
+              :to="{ name: 'edit-project', params: { id: project.id } }"
+              class="details__edit"
+            >
+              Edit project
+            </RouterLink>
           </header>
 
           <dl class="details__meta">
@@ -264,6 +270,22 @@ const spotsRemaining = computed(() =>
 .details__location {
   margin-top: var(--spacing-xs);
   color: var(--color-text-secondary);
+}
+
+.details__edit {
+  display: inline-block;
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.details__edit:hover {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
 }
 
 .details__meta {

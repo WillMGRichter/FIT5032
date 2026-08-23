@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
@@ -7,36 +7,22 @@ import FormSelect from '@/components/forms/FormSelect.vue'
 import { createProject } from '@/services/projectService'
 import { getCategories } from '@/services/categoryService'
 import { ApiError } from '@/services/api'
+import {
+  PROJECT_STATUS_OPTIONS,
+  createEmptyProjectForm,
+  useProjectValidation,
+} from '@/composables/useProjectValidation'
 
 const router = useRouter()
 
-const initialForm = {
-  title: '',
-  description: '',
-  categoryId: '',
-  location: '',
-  latitude: '',
-  longitude: '',
-  image: '',
-  startDate: '',
-  endDate: '',
-  capacity: '',
-  status: 'planned',
-}
+const form = reactive(createEmptyProjectForm())
+const { errors, validate, applyServerErrors } = useProjectValidation(form)
 
-const form = reactive({ ...initialForm })
-const errors = reactive({})
 const categories = ref([])
 const isLoading = ref(true)
 const isSubmitting = ref(false)
 const submitError = ref(null)
 const isSuccess = ref(false)
-
-const statusOptions = [
-  { value: 'planned', label: 'Planned' },
-  { value: 'active', label: 'Active' },
-  { value: 'completed', label: 'Completed' },
-]
 
 async function loadCategories() {
   isLoading.value = true
@@ -49,69 +35,24 @@ async function loadCategories() {
   }
 }
 
-function validate() {
-  const nextErrors = {}
-
-  if (!form.title.trim()) {
-    nextErrors.title = 'Project title is required.'
-  }
-
-  if (!form.description.trim()) {
-    nextErrors.description = 'Please describe what volunteers will do in this project.'
-  }
-
-  if (!form.categoryId) {
-    nextErrors.categoryId = 'Please choose a category.'
-  }
-
-  if (!form.location.trim()) {
-    nextErrors.location = 'Location is required, e.g. "Royal Park, Parkville".'
-  }
-
-  const latitude = Number(form.latitude)
-  if (form.latitude === '' || !Number.isFinite(latitude)) {
-    nextErrors.latitude = 'Latitude must be a number, e.g. -37.8515.'
-  } else if (latitude < -90 || latitude > 90) {
-    nextErrors.latitude = 'Latitude must be between -90 and 90.'
-  }
-
-  const longitude = Number(form.longitude)
-  if (form.longitude === '' || !Number.isFinite(longitude)) {
-    nextErrors.longitude = 'Longitude must be a number, e.g. 144.9510.'
-  } else if (longitude < -180 || longitude > 180) {
-    nextErrors.longitude = 'Longitude must be between -180 and 180.'
-  }
-
-  const capacity = Number(form.capacity)
-  if (form.capacity === '' || !Number.isInteger(capacity) || capacity <= 0) {
-    nextErrors.capacity = 'Capacity must be a whole number greater than zero.'
-  }
-
-  if (!form.startDate) {
-    nextErrors.startDate = 'Start date is required.'
-  }
-
-  if (!form.endDate) {
-    nextErrors.endDate = 'End date is required.'
-  } else if (form.startDate && form.endDate < form.startDate) {
-    nextErrors.endDate = "End date can't be before the start date."
-  }
-
-  Object.keys(errors).forEach((key) => delete errors[key])
-  Object.assign(errors, nextErrors)
-  return Object.keys(nextErrors).length === 0
-}
-
-watch(form, (next, previous) => {
-  for (const key of Object.keys(next)) {
-    if (next[key] !== previous[key]) {
-      delete errors[key]
-    }
-  }
-})
-
 function fieldError(key) {
   return errors[key] ?? ''
+}
+
+function buildPayload() {
+  return {
+    title: form.title.trim(),
+    description: form.description.trim(),
+    categoryId: form.categoryId,
+    location: form.location.trim(),
+    latitude: Number(form.latitude),
+    longitude: Number(form.longitude),
+    image: form.image.trim() || null,
+    startDate: form.startDate,
+    endDate: form.endDate,
+    capacity: Number(form.capacity),
+    status: form.status,
+  }
 }
 
 async function handleSubmit() {
@@ -125,19 +66,7 @@ async function handleSubmit() {
 
   isSubmitting.value = true
   try {
-    const created = await createProject({
-      title: form.title.trim(),
-      description: form.description.trim(),
-      categoryId: form.categoryId,
-      location: form.location.trim(),
-      latitude: Number(form.latitude),
-      longitude: Number(form.longitude),
-      image: form.image.trim() || null,
-      startDate: form.startDate,
-      endDate: form.endDate,
-      capacity: Number(form.capacity),
-      status: form.status,
-    })
+    const created = await createProject(buildPayload())
 
     isSuccess.value = true
     setTimeout(() => {
@@ -145,8 +74,7 @@ async function handleSubmit() {
     }, 1200)
   } catch (err) {
     if (err instanceof ApiError && err.status === 400 && err.details?.errors) {
-      Object.keys(errors).forEach((key) => delete errors[key])
-      Object.assign(errors, err.details.errors)
+      applyServerErrors(err.details.errors)
       submitError.value =
         'The server rejected some of these values. Please review the highlighted fields.'
     } else {
@@ -288,7 +216,7 @@ loadCategories()
             v-model="form.status"
             label="Status"
             placeholder=""
-            :options="statusOptions"
+            :options="PROJECT_STATUS_OPTIONS"
             :error="fieldError('status')"
           />
         </div>
