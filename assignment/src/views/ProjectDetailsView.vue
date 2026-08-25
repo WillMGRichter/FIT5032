@@ -1,20 +1,24 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   getProjectById,
   getParticipation,
   joinProject,
   leaveProject,
   getProjectPlants,
+  deleteProject,
 } from '@/services/projectService'
 import { ApiError } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
+import { usePermissions } from '@/composables/usePermissions'
 import ProjectPlantList from '@/components/plant/ProjectPlantList.vue'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
+const { canManageProject } = usePermissions()
 
 const project = ref(null)
 const isLoading = ref(true)
@@ -27,6 +31,11 @@ const plantsError = ref('')
 const isParticipating = ref(false)
 const isActionBusy = ref(false)
 const actionError = ref(null)
+
+const isDeleting = ref(false)
+const deleteError = ref(null)
+
+const canManage = computed(() => canManageProject(project.value))
 
 async function loadProject(id) {
   if (!id) return
@@ -62,6 +71,24 @@ async function loadPlants() {
     projectPlants.value = []
   } finally {
     plantsLoading.value = false
+  }
+}
+
+async function handleDelete() {
+  if (isDeleting.value || !project.value) return
+  const confirmed = window.confirm(`Delete "${project.value.title}"? This cannot be undone.`)
+  if (!confirmed) return
+
+  isDeleting.value = true
+  deleteError.value = null
+  try {
+    await deleteProject(project.value.id)
+    router.push({ name: 'discover' })
+  } catch (err) {
+    deleteError.value =
+      err instanceof ApiError && err.message ? err.message : 'Could not delete this project.'
+  } finally {
+    isDeleting.value = false
   }
 }
 
@@ -195,12 +222,25 @@ const spotsRemaining = computed(() =>
             <p class="details__category">{{ project.category?.name }}</p>
             <h1 class="details__title">{{ project.title }}</h1>
             <p class="details__location">{{ project.location }}</p>
-            <RouterLink
-              :to="{ name: 'edit-project', params: { id: project.id } }"
-              class="details__edit"
-            >
-              Edit project
-            </RouterLink>
+            <div v-if="canManage" class="details__manage">
+              <RouterLink
+                :to="{ name: 'edit-project', params: { id: project.id } }"
+                class="details__edit"
+              >
+                Edit project
+              </RouterLink>
+              <button
+                type="button"
+                class="details__delete"
+                :disabled="isDeleting"
+                @click="handleDelete"
+              >
+                {{ isDeleting ? 'Deleting…' : 'Delete project' }}
+              </button>
+              <p v-if="deleteError" role="alert" class="details__manage-error">
+                {{ deleteError }}
+              </p>
+            </div>
           </header>
 
           <dl class="details__meta">
@@ -416,6 +456,48 @@ const spotsRemaining = computed(() =>
   color: var(--color-primary);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
+}
+
+.details__manage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm) var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.details__manage .details__edit {
+  margin-top: 0;
+}
+
+.details__delete {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.details__delete:hover:not(:disabled) {
+  background-color: var(--color-error);
+  color: var(--color-surface);
+}
+
+.details__delete:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.details__manage-error {
+  flex-basis: 100%;
+  margin: 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-sm);
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
 }
 
 .details__title {

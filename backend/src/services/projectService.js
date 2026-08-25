@@ -204,7 +204,7 @@ async function createProject(input) {
   return created
 }
 
-async function updateProject(id, input) {
+async function updateProject(id, input, user) {
   const projectId = Number(id)
   if (!Number.isInteger(projectId)) {
     throw badRequest('Project id must be a number')
@@ -216,6 +216,7 @@ async function updateProject(id, input) {
     error.status = 404
     throw error
   }
+  assertCanManage(user, existing)
 
   assertJsonObject(input)
   const values = await validateProjectData(input)
@@ -237,6 +238,30 @@ async function updateProject(id, input) {
 
   await projectModel.setProjectPlants(projectId, plantIds)
   return projectModel.findById(projectId) ?? updated
+}
+
+function assertCanManage(user, project) {
+  if (!user || (user.role !== 'admin' && project.createdBy !== user.id)) {
+    const error = new Error('You do not have permission to manage this project.')
+    error.status = 403
+    throw error
+  }
+}
+
+async function deleteProject(id, user) {
+  assertProjectId(id)
+  const projectId = Number(id)
+
+  const existing = await projectModel.findById(projectId)
+  if (!existing) {
+    const error = new Error(`Project with id ${projectId} not found`)
+    error.status = 404
+    throw error
+  }
+  assertCanManage(user, existing)
+
+  await projectModel.deleteById(projectId)
+  return { success: true }
 }
 
 function extractPlantIds(input) {
@@ -351,4 +376,5 @@ module.exports = {
   joinProject,
   leaveProject,
   getProjectPlants,
+  deleteProject,
 }

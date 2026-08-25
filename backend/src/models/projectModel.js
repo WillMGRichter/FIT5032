@@ -17,6 +17,7 @@ function mapRow(row) {
     endDate: row.end_date,
     capacity: row.capacity,
     status: row.status,
+    createdBy: row.created_by ?? null,
     volunteerCount: row.volunteer_count ? Number(row.volunteer_count) : undefined,
   }
 }
@@ -272,11 +273,17 @@ async function setProjectPlants(projectId, plantIds) {
   )
 }
 
+async function deleteById(id) {
+  const { rowCount } = await pool.query('DELETE FROM projects WHERE id = $1', [id])
+  return rowCount > 0
+}
+
 module.exports = {
   findAll,
   findById,
   create,
   update,
+  deleteById,
   findJoinedByUser,
   findParticipation,
   countParticipations,

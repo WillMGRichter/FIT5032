@@ -30,7 +30,7 @@ async function createProject(req, res, next) {
 
 async function updateProject(req, res, next) {
   try {
-    const project = await projectService.updateProject(req.params.id, req.body)
+    const project = await projectService.updateProject(req.params.id, req.body, req.user)
     res.json({ data: project })
   } catch (error) {
     next(error)
@@ -73,11 +73,21 @@ async function getProjectPlants(req, res, next) {
   }
 }
 
+async function deleteProject(req, res, next) {
+  try {
+    const result = await projectService.deleteProject(req.params.id, req.user)
+    res.json({ data: result })
+  } catch (error) {
+    next(error)
+  }
+}
+
 module.exports = {
   getProjects,
   getProjectById,
   createProject,
   updateProject,
+  deleteProject,
   getParticipation,
   joinProject,
   leaveProject,
