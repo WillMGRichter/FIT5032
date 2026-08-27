@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { usePermissions } from '@/composables/usePermissions'
 import { getUsers, updateUserRole, deleteUser, getStats } from '@/services/adminService'
+import { getProjects, deleteProject } from '@/services/projectService'
 import { ApiError } from '@/services/api'
 
 const router = useRouter()
@@ -11,12 +12,14 @@ const authStore = useAuthStore()
 const { isAdmin } = usePermissions()
 
 const users = ref([])
+const projects = ref([])
 const stats = ref(null)
 const isLoading = ref(true)
 const error = ref(null)
 const actionError = ref(null)
 const actionSuccess = ref('')
 const busyUserId = ref(null)
+const busyProjectId = ref(null)
 
 const currentUser = computed(() => authStore.state.user)
 
@@ -37,8 +40,13 @@ async function loadData() {
   actionError.value = null
   actionSuccess.value = ''
   try {
-    const [userData, statsData] = await Promise.all([getUsers(), getStats()])
+    const [userData, statsData, projectData] = await Promise.all([
+      getUsers(),
+      getStats(),
+      getProjects(),
+    ])
     users.value = userData ?? []
+    projects.value = projectData ?? []
     stats.value = statsData ?? null
   } catch (err) {
     error.value = err && err.message ? err.message : 'Could not load admin data.'
@@ -91,6 +99,30 @@ async function handleDeleteUser(user) {
   }
 }
 
+async function handleDeleteProject(project) {
+  if (busyProjectId.value) return
+  const confirmed = window.confirm(`Delete "${project.title}"? This cannot be undone.`)
+  if (!confirmed) return
+
+  busyProjectId.value = project.id
+  actionError.value = null
+  actionSuccess.value = ''
+  try {
+    await deleteProject(project.id)
+    projects.value = projects.value.filter((p) => p.id !== project.id)
+    actionSuccess.value = `"${project.title}" has been removed.`
+    if (stats.value) {
+      stats.value.project_count = Math.max(0, stats.value.project_count - 1)
+    }
+  } catch (err) {
+    actionError.value =
+      err instanceof ApiError && err.message ? err.message : 'Could not delete this project.'
+    await loadData()
+  } finally {
+    busyProjectId.value = null
+  }
+}
+
 onMounted(() => {
   if (!isAdmin.value) {
     router.replace({ name: 'unauthorized' })
@@ -104,7 +136,7 @@ onMounted(() => {
   <section class="admin" aria-labelledby="admin-heading">
     <header class="admin__header">
       <h1 id="admin-heading">Admin Dashboard</h1>
-      <p class="admin__intro">Manage users, roles and view platform statistics.</p>
+      <p class="admin__intro">Manage users, projects, roles and view platform statistics.</p>
     </header>
 
     <div v-if="isLoading" class="admin__state">Loading admin data&hellip;</div>
@@ -185,6 +217,64 @@ onMounted(() => {
                     class="admin__delete-btn"
                     :disabled="user.id === currentUser?.id || busyUserId === user.id"
                     @click="handleDeleteUser(user)"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin__section">
+        <h2>Projects</h2>
+        <p class="admin__note">
+          {{ projects.length }} project{{ projects.length === 1 ? '' : 's' }}.
+        </p>
+
+        <div v-if="projects.length === 0" class="admin__empty">No projects found.</div>
+
+        <div v-else class="admin__table-wrap">
+          <table class="admin__table">
+            <thead>
+              <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Category</th>
+                <th scope="col">Status</th>
+                <th scope="col">Location</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="project in projects" :key="project.id">
+                <td>
+                  <RouterLink
+                    :to="{ name: 'project-details', params: { id: project.id } }"
+                    class="admin__project-link"
+                  >
+                    {{ project.title }}
+                  </RouterLink>
+                </td>
+                <td>{{ project.category?.name ?? '—' }}</td>
+                <td>
+                  <span :class="['admin__status', `admin__status--${project.status}`]">
+                    {{ project.status }}
+                  </span>
+                </td>
+                <td>{{ project.location }}</td>
+                <td class="admin__actions">
+                  <RouterLink
+                    :to="{ name: 'edit-project', params: { id: project.id } }"
+                    class="admin__edit-btn"
+                  >
+                    Edit
+                  </RouterLink>
+                  <button
+                    type="button"
+                    class="admin__delete-btn"
+                    :disabled="busyProjectId === project.id"
+                    @click="handleDeleteProject(project)"
                   >
                     Delete
                   </button>
@@ -359,5 +449,73 @@ onMounted(() => {
 .admin__delete-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.admin__empty {
+  padding: var(--spacing-lg);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.admin__project-link {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+}
+
+.admin__project-link:hover {
+  text-decoration: underline;
+}
+
+.admin__status {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+}
+
+.admin__status--active {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.admin__status--planned {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.admin__status--completed {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.admin__status--cancelled {
+  background-color: #fdecea;
+  color: var(--color-error);
+}
+
+.admin__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  white-space: nowrap;
+}
+
+.admin__edit-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+}
+
+.admin__edit-btn:hover {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
 }
 </style>
