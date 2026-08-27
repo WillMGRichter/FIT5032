@@ -75,8 +75,7 @@ async function handleSubmit() {
     } else if (err instanceof ApiError && err.status === 401) {
       submitError.value = 'Invalid email or password. Please try again.'
     } else if (err instanceof ApiError && err.status === 0) {
-      submitError.value =
-        'Could not reach the GreenLink API. Check your connection and try again.'
+      submitError.value = 'Could not reach the GreenLink API. Check your connection and try again.'
     } else {
       submitError.value =
         err && err.message ? err.message : 'Something went wrong while logging you in.'
@@ -91,7 +90,9 @@ async function handleSubmit() {
   <section class="login" aria-labelledby="login-heading">
     <header class="login__header">
       <h1 id="login-heading">Log in</h1>
-      <p class="login__intro">Welcome back &mdash; sign in to join projects and track your impact.</p>
+      <p class="login__intro">
+        Welcome back &mdash; sign in to join projects and track your impact.
+      </p>
     </header>
 
     <form class="login__form" novalidate @submit.prevent="handleSubmit">
