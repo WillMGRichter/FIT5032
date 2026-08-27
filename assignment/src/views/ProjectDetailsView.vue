@@ -14,6 +14,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { usePermissions } from '@/composables/usePermissions'
 import ProjectPlantList from '@/components/plant/ProjectPlantList.vue'
 import ProjectRating from '@/components/project/ProjectRating.vue'
+import EmailComposeModal from '@/components/email/EmailComposeModal.vue'
+import { getProjectParticipants } from '@/services/emailService'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
@@ -36,6 +38,10 @@ const actionError = ref(null)
 const isDeleting = ref(false)
 const deleteError = ref(null)
 
+const showEmailModal = ref(false)
+const participants = ref([])
+const participantsLoading = ref(false)
+
 const canManage = computed(() => canManageProject(project.value))
 
 async function loadProject(id) {
@@ -52,6 +58,7 @@ async function loadProject(id) {
     project.value = await getProjectById(id)
     await loadParticipation()
     await loadPlants()
+    await loadParticipants()
   } catch (err) {
     error.value =
       err && err.message ? err.message : 'Something went wrong while loading this project.'
@@ -104,6 +111,18 @@ async function loadParticipation() {
   }
 }
 
+async function loadParticipants() {
+  if (!project.value || !canManage.value) return
+  participantsLoading.value = true
+  try {
+    participants.value = (await getProjectParticipants(project.value.id)) ?? []
+  } catch {
+    participants.value = []
+  } finally {
+    participantsLoading.value = false
+  }
+}
+
 watch(
   () => route.params.id,
   (id) => loadProject(id),
@@ -117,6 +136,10 @@ const isCompleted = computed(() => project.value?.status === 'completed')
 const isCancelled = computed(() => project.value?.status === 'cancelled')
 
 const hasSpotsRemaining = computed(() => spotsRemaining.value > 0)
+
+const emailRecipientLabel = computed(() =>
+  project.value?.title ? `Participants of "${project.value.title}"` : 'Project participants',
+)
 
 async function handleJoin() {
   if (isActionBusy.value || !project.value) return
@@ -236,6 +259,14 @@ const spotsRemaining = computed(() =>
               </RouterLink>
               <button
                 type="button"
+                class="details__email-btn"
+                :disabled="participantsLoading || participants.length === 0"
+                @click="showEmailModal = true"
+              >
+                Email Participants
+              </button>
+              <button
+                type="button"
                 class="details__delete"
                 :disabled="isDeleting"
                 @click="handleDelete"
@@ -338,6 +369,14 @@ const spotsRemaining = computed(() =>
         <ProjectRating :project-id="project.id" />
       </article>
     </template>
+
+    <EmailComposeModal
+      :visible="showEmailModal"
+      :recipients="participants"
+      :recipient-label="emailRecipientLabel"
+      :project-title="project?.title || ''"
+      @close="showEmailModal = false"
+    />
   </section>
 </template>
 
@@ -508,6 +547,25 @@ const spotsRemaining = computed(() =>
 .details__delete:hover:not(:disabled) {
   background-color: var(--color-error);
   color: var(--color-surface);
+}
+
+.details__email-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.details__email-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.details__email-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .details__delete:disabled {

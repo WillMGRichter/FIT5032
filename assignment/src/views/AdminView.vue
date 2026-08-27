@@ -6,6 +6,7 @@ import { usePermissions } from '@/composables/usePermissions'
 import { getUsers, updateUserRole, deleteUser, getStats } from '@/services/adminService'
 import { getProjects, deleteProject } from '@/services/projectService'
 import { ApiError } from '@/services/api'
+import EmailComposeModal from '@/components/email/EmailComposeModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -20,6 +21,7 @@ const actionError = ref(null)
 const actionSuccess = ref('')
 const busyUserId = ref(null)
 const busyProjectId = ref(null)
+const showEmailModal = ref(false)
 
 const currentUser = computed(() => authStore.state.user)
 
@@ -175,6 +177,20 @@ onMounted(() => {
       </div>
 
       <div class="admin__section">
+        <h2>Email Users</h2>
+        <p class="admin__note">
+          Send an email to all registered users. You can optionally attach a file.
+        </p>
+        <button
+          type="button"
+          class="admin__email-btn"
+          @click="showEmailModal = true"
+        >
+          Compose Email
+        </button>
+      </div>
+
+      <div class="admin__section">
         <h2>Registered Users</h2>
         <p class="admin__note">
           {{ users.length }} user{{ users.length === 1 ? '' : 's' }} registered.
@@ -286,6 +302,13 @@ onMounted(() => {
       </div>
     </template>
   </section>
+
+  <EmailComposeModal
+    :visible="showEmailModal"
+    :recipients="users"
+    recipient-label="All registered users"
+    @close="showEmailModal = false"
+  />
 </template>
 
 <style scoped>
@@ -517,5 +540,23 @@ onMounted(() => {
 .admin__edit-btn:hover {
   background-color: var(--color-primary);
   color: var(--color-surface);
+}
+
+.admin__email-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.admin__email-btn:hover {
+  background-color: var(--color-primary-dark);
 }
 </style>

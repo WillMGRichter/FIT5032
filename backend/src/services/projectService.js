@@ -2,6 +2,7 @@ const projectModel = require('../models/projectModel')
 const categoryModel = require('../models/categoryModel')
 const plantModel = require('../models/plantModel')
 const notificationService = require('./notificationService')
+const emailService = require('./emailService')
 
 const VALID_STATUSES = ['planned', 'active', 'completed', 'cancelled']
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -384,6 +385,23 @@ async function joinProject(projectId, userId) {
       `A volunteer has joined "${project.title}".`,
       `/projects/${projectId}`,
     ).catch(() => {})
+  }
+
+  if (emailService.IS_CONFIGURED) {
+    const { rows: userRows } = await require('../config/db').query(
+      'SELECT email, first_name, last_name FROM users WHERE id = $1',
+      [userId],
+    )
+    if (userRows.length > 0) {
+      const u = userRows[0]
+      emailService.sendParticipationConfirmation({
+        email: u.email,
+        userName: u.first_name,
+        projectTitle: project.title,
+        projectLocation: project.location,
+        startDate: project.startDate,
+      }).catch(() => {})
+    }
   }
 
   return {

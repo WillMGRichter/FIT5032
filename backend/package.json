@@ -10,10 +10,12 @@
     "db:setup": "node db/setup.js"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "firebase-admin": "^14.3.0",
+    "multer": "^2.2.0",
     "pg": "^8.16.3"
   }
 }
