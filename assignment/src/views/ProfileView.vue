@@ -3,6 +3,7 @@ import { computed, reactive, ref, onMounted } from 'vue'
 import ProfileForm from '@/components/forms/ProfileForm.vue'
 import { formatDate } from '@/utils/formatDate'
 import { getProfile, updateProfile, getMyProjects } from '@/services/authService'
+import { leaveProject } from '@/services/projectService'
 import { ApiError } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -17,6 +18,9 @@ const isEditing = ref(false)
 const isSubmitting = ref(false)
 const submitError = ref(null)
 const isSuccess = ref(false)
+
+const leaveBusyId = ref(null)
+const leaveError = ref('')
 
 const form = reactive({
   firstName: '',
@@ -103,7 +107,7 @@ function validateField(field) {
       break
     case 'profileImage':
       if (form.profileImage.trim() && !/^https?:\/\//i.test(form.profileImage.trim())) {
-        errors.profileImage = 'Profile image must be a URL starting with http:// or https://.'
+        errors.profileImage = 'Profile image must be a URL starting with http:// or https://'
       } else {
         errors.profileImage = ''
       }
@@ -177,8 +181,63 @@ async function handleSubmit() {
 
 const todayIso = new Date().toISOString().slice(0, 10)
 
-function isUpcoming(project) {
-  return ['planned', 'active'].includes(project.status) && (project.endDate ?? '') >= todayIso
+const groupedJoined = computed(() => {
+  const upcoming = []
+  const active = []
+  const completed = []
+  const cancelled = []
+
+  for (const project of activity.value.joined) {
+    const s = project.status
+    if (s === 'cancelled') {
+      cancelled.push(project)
+    } else if (s === 'completed') {
+      completed.push(project)
+    } else if (s === 'active') {
+      active.push(project)
+    } else {
+      upcoming.push(project)
+    }
+  }
+
+  return { upcoming, active, completed, cancelled }
+})
+
+const nextProject = computed(() => {
+  const all = [...groupedJoined.value.upcoming, ...groupedJoined.value.active]
+  return all.find((p) => (p.endDate ?? '') >= todayIso) ?? null
+})
+
+const hasJoinedProjects = computed(() => activity.value.joined.length > 0)
+
+function canLeave(project) {
+  return ['planned', 'active'].includes(project.status)
+}
+
+async function handleLeave(project) {
+  if (leaveBusyId.value) return
+  const confirmed = window.confirm(
+    `Leave "${project.title}"? You can rejoin later if spots are available.`,
+  )
+  if (!confirmed) return
+
+  leaveBusyId.value = project.id
+  leaveError.value = ''
+  try {
+    const result = await leaveProject(project.id)
+    activity.value.joined = activity.value.joined.filter((p) => p.id !== project.id)
+    const source = activity.value.created.find((p) => p.id === project.id)
+    if (source) source.volunteerCount = result.volunteerCount
+  } catch (err) {
+    leaveError.value =
+      err instanceof ApiError && err.status === 401
+        ? 'Your session expired. Please log in again.'
+        : err && err.message
+          ? err.message
+          : 'Could not leave this project.'
+  } finally {
+    leaveBusyId.value = null
+  }
 }
 </script>
 
@@ -254,7 +313,7 @@ function isUpcoming(project) {
 
         <div class="profile-edit__actions">
           <button type="submit" class="profile__save-btn" :disabled="isSubmitting">
-            {{ isSubmitting ? 'Saving…' : 'Save changes' }}
+            {{ isSubmitting ? 'Saving\u2026' : 'Save changes' }}
           </button>
           <button type="button" class="profile__cancel-btn" @click="cancelEditing">Cancel</button>
         </div>
@@ -275,7 +334,8 @@ function isUpcoming(project) {
                 </span>
               </span>
               <span class="activity__meta">
-                {{ formatDate(project.startDate) }} – {{ formatDate(project.endDate) }}
+                {{ formatDate(project.startDate) }} &ndash; {{ formatDate(project.endDate) }}
+                <template v-if="project.location"> &middot; {{ project.location }} </template>
               </span>
             </RouterLink>
             <RouterLink
@@ -293,27 +353,68 @@ function isUpcoming(project) {
       </section>
 
       <section class="activity" aria-labelledby="activity-joined-title">
-        <h2 id="activity-joined-title">Projects you've joined</h2>
-        <ul v-if="activity.joined.length > 0" class="activity__list">
-          <li v-for="project in activity.joined" :key="project.id" class="activity__item">
-            <RouterLink
-              :to="{ name: 'project-details', params: { id: project.id } }"
-              class="activity__link"
-            >
-              <span class="activity__title">
-                {{ project.title }}
-                <span class="activity__status-badge" :data-status="project.status">
-                  {{ project.status }}
-                </span>
-                <span v-if="isUpcoming(project)" class="activity__upcoming">Upcoming</span>
-              </span>
-              <span class="activity__meta">
-                {{ formatDate(project.startDate) }} – {{ formatDate(project.endDate) }} ·
-                {{ project.participation.role }}
-              </span>
-            </RouterLink>
-          </li>
-        </ul>
+        <h2 id="activity-joined-title">My Projects</h2>
+
+        <div v-if="nextProject" class="next-project">
+          <p class="next-project__label">Next Project</p>
+          <RouterLink
+            :to="{ name: 'project-details', params: { id: nextProject.id } }"
+            class="next-project__link"
+          >
+            <span class="next-project__title">{{ nextProject.title }}</span>
+            <span class="next-project__date">
+              {{ formatDate(nextProject.startDate) }} &ndash; {{ formatDate(nextProject.endDate) }}
+            </span>
+            <span class="next-project__location">{{ nextProject.location }}</span>
+          </RouterLink>
+        </div>
+
+        <p v-if="leaveError" role="alert" class="profile__alert">{{ leaveError }}</p>
+
+        <template v-if="hasJoinedProjects">
+          <div
+            v-for="(label, key) in {
+              upcoming: 'Upcoming',
+              active: 'Active',
+              completed: 'Completed',
+              cancelled: 'Cancelled',
+            }"
+            :key="key"
+            class="activity__group"
+          >
+            <h3 v-if="groupedJoined[key].length > 0" class="activity__group-title">{{ label }}</h3>
+            <ul v-if="groupedJoined[key].length > 0" class="activity__list">
+              <li v-for="project in groupedJoined[key]" :key="project.id" class="activity__item">
+                <RouterLink
+                  :to="{ name: 'project-details', params: { id: project.id } }"
+                  class="activity__link"
+                >
+                  <span class="activity__title">
+                    {{ project.title }}
+                    <span class="activity__status-badge" :data-status="project.status">
+                      {{ project.status }}
+                    </span>
+                  </span>
+                  <span class="activity__meta">
+                    {{ formatDate(project.startDate) }} &ndash; {{ formatDate(project.endDate) }}
+                    <template v-if="project.location"> &middot; {{ project.location }} </template>
+                    &middot; {{ project.participation.role }}
+                  </span>
+                </RouterLink>
+                <button
+                  v-if="canLeave(project)"
+                  type="button"
+                  class="activity__leave"
+                  :disabled="leaveBusyId === project.id"
+                  @click="handleLeave(project)"
+                >
+                  {{ leaveBusyId === project.id ? 'Leaving\u2026' : 'Leave' }}
+                </button>
+              </li>
+            </ul>
+          </div>
+        </template>
+
         <p v-else class="activity__empty">
           You haven't joined any projects yet.
           <RouterLink :to="{ name: 'discover' }">Browse Discover</RouterLink>
@@ -521,6 +622,19 @@ function isUpcoming(project) {
   margin-block-end: var(--spacing-md);
 }
 
+.activity__group {
+  margin-block-end: var(--spacing-lg);
+}
+
+.activity__group-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-light);
+  margin-block-end: var(--spacing-sm);
+}
+
 .activity__list {
   display: flex;
   flex-direction: column;
@@ -558,18 +672,6 @@ function isUpcoming(project) {
 .activity__meta {
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-}
-
-.activity__upcoming {
-  display: inline-block;
-  margin-left: var(--spacing-sm);
-  padding: 2px var(--spacing-sm);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-background);
-  color: var(--color-success);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  vertical-align: middle;
 }
 
 .activity__status-badge {
@@ -614,6 +716,27 @@ function isUpcoming(project) {
   border-color: var(--color-primary);
 }
 
+.activity__leave {
+  flex-shrink: 0;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.activity__leave:hover:not(:disabled) {
+  background-color: var(--color-error);
+  color: var(--color-surface);
+}
+
+.activity__leave:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .activity__empty {
   padding: var(--spacing-lg);
   border: 1px dashed var(--color-border);
@@ -625,5 +748,46 @@ function isUpcoming(project) {
 .activity__empty a {
   color: var(--color-primary);
   font-weight: var(--font-weight-medium);
+}
+
+.next-project {
+  margin-block-end: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+}
+
+.next-project__label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+  margin-block-end: var(--spacing-xs);
+}
+
+.next-project__link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  text-decoration: none;
+  color: inherit;
+}
+
+.next-project__link:hover .next-project__title {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.next-project__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.next-project__date,
+.next-project__location {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 }
 </style>
