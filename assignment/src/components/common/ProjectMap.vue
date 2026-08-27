@@ -8,10 +8,13 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { escapeHtml } from '@/utils/sanitize'
 
+const emit = defineEmits(['select'])
+
 const props = defineProps({
   projects: { type: Array, default: () => [] },
   isLoading: { type: Boolean, default: false },
   error: { type: String, default: '' },
+  selectedProjectId: { type: [Number, String, null], default: null },
   center: {
     type: Array,
     default: () => [-37.8136, 144.9631],
@@ -26,6 +29,7 @@ const hasMapFailed = ref(false)
 
 let map = null
 let markerLayer = null
+const markersByProjectId = new Map()
 
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
@@ -72,11 +76,14 @@ function clearMarkers() {
 function addMarkers() {
   if (!map || !markerLayer) return
   clearMarkers()
+  markersByProjectId.clear()
 
   mappableProjects.value.forEach((project) => {
     const marker = L.marker([Number(project.latitude), Number(project.longitude)])
     marker.bindPopup(createPopupContent(project))
+    marker.on('click', () => emit('select', project.id))
     markerLayer.addLayer(marker)
+    markersByProjectId.set(project.id, marker)
   })
 
   if (mappableProjects.value.length > 0) {
@@ -117,6 +124,18 @@ watch(
     }
   },
   { deep: true },
+)
+
+watch(
+  () => props.selectedProjectId,
+  (id) => {
+    if (id == null || !map) return
+    const marker = markersByProjectId.get(id)
+    if (marker) {
+      marker.openPopup()
+      map.setView(marker.getLatLng(), Math.max(map.getZoom(), 13))
+    }
+  },
 )
 
 onMounted(initMap)
@@ -165,7 +184,7 @@ onBeforeUnmount(() => {
 .project-map {
   position: relative;
   width: 100%;
-  min-height: 300px;
+  min-height: 220px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;

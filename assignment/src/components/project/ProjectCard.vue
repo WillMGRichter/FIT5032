@@ -2,10 +2,16 @@
 import { computed, ref } from 'vue'
 import { formatDate } from '@/utils/formatDate'
 
+const emit = defineEmits(['select'])
+
 const props = defineProps({
   project: {
     type: Object,
     required: true,
+  },
+  isSelected: {
+    type: Boolean,
+    default: false,
   },
 })
 
@@ -39,13 +45,24 @@ const statusHint = computed(() => {
   return null
 })
 
+const ratingDisplay = computed(() => {
+  const avg = props.project.avgRating ?? 0
+  const count = props.project.ratingCount ?? 0
+  if (count === 0) return null
+  return { avg, count }
+})
+
 function onImageError() {
   imageFailed.value = true
+}
+
+function onSelect() {
+  emit('select', props.project.id)
 }
 </script>
 
 <template>
-  <article class="project-card">
+  <article class="project-card" :class="{ 'project-card--selected': isSelected }" @click="onSelect">
     <div class="project-card__media">
       <img
         v-if="project.image && !imageFailed"
@@ -70,6 +87,26 @@ function onImageError() {
       </h3>
       <p class="project-card__location">{{ project.location }}</p>
       <p class="project-card__description">{{ project.description }}</p>
+      <p v-if="ratingDisplay" class="project-card__rating">
+        <span
+          class="project-card__rating-stars"
+          :aria-label="`${ratingDisplay.avg} out of 5 stars`"
+        >
+          <span
+            v-for="i in 5"
+            :key="i"
+            :class="
+              i <= Math.round(ratingDisplay.avg)
+                ? 'project-card__star--filled'
+                : 'project-card__star'
+            "
+            >&#9733;</span
+          >
+        </span>
+        <span class="project-card__rating-text"
+          >{{ ratingDisplay.avg }} ({{ ratingDisplay.count }})</span
+        >
+      </p>
     </div>
 
     <footer class="project-card__footer">
@@ -106,6 +143,12 @@ function onImageError() {
 
 .project-card:hover {
   box-shadow: var(--shadow-md);
+}
+
+.project-card--selected {
+  box-shadow:
+    0 0 0 2px var(--color-primary),
+    var(--shadow-md);
 }
 
 .project-card__media {
@@ -200,6 +243,26 @@ function onImageError() {
   line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.project-card__rating {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.project-card__rating-stars {
+  color: var(--color-border);
+}
+
+.project-card__star--filled {
+  color: #f59e0b;
+}
+
+.project-card__rating-text {
+  color: var(--color-text-secondary);
 }
 
 .project-card__footer {

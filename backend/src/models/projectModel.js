@@ -19,6 +19,8 @@ function mapRow(row) {
     status: row.status,
     createdBy: row.created_by ?? null,
     volunteerCount: row.volunteer_count ? Number(row.volunteer_count) : undefined,
+    avgRating: row.avg_rating ? Number(row.avg_rating) : 0,
+    ratingCount: row.rating_count ? Number(row.rating_count) : 0,
   }
 }
 
@@ -43,9 +45,18 @@ async function findAll({ status, categoryId, createdBy } = {}) {
 
   const { rows } = await pool.query(
     `SELECT p.*, c.name AS category_name,
-            (SELECT count(*) FROM project_participations pp WHERE pp.project_id = p.id) AS volunteer_count
+            (SELECT count(*) FROM project_participations pp WHERE pp.project_id = p.id) AS volunteer_count,
+            COALESCE(r.avg_score, 0) AS avg_rating,
+            COALESCE(r.rating_count, 0) AS rating_count
        FROM projects p
        JOIN categories c ON c.id = p.category_id
+       LEFT JOIN (
+         SELECT project_id,
+                ROUND(AVG(score)::numeric, 1) AS avg_score,
+                count(*)::int AS rating_count
+           FROM project_ratings
+          GROUP BY project_id
+       ) r ON r.project_id = p.id
        ${where}
       ORDER BY p.start_date`,
     values
@@ -58,10 +69,19 @@ async function findById(id) {
   const { rows } = await pool.query(
     `SELECT p.*, c.name AS category_name, c.description AS category_description,
             u.id AS creator_id, u.first_name AS creator_first_name, u.last_name AS creator_last_name,
-            (SELECT count(*) FROM project_participations pp WHERE pp.project_id = p.id) AS volunteer_count
+            (SELECT count(*) FROM project_participations pp WHERE pp.project_id = p.id) AS volunteer_count,
+            COALESCE(r.avg_score, 0) AS avg_rating,
+            COALESCE(r.rating_count, 0) AS rating_count
        FROM projects p
        JOIN categories c ON c.id = p.category_id
        LEFT JOIN users u ON u.id = p.created_by
+       LEFT JOIN (
+         SELECT project_id,
+                ROUND(AVG(score)::numeric, 1) AS avg_score,
+                count(*)::int AS rating_count
+           FROM project_ratings
+          GROUP BY project_id
+       ) r ON r.project_id = p.id
       WHERE p.id = $1`,
     [id]
   )
@@ -163,10 +183,19 @@ async function findJoinedByUser(userId) {
   const { rows } = await pool.query(
     `SELECT p.*, c.name AS category_name,
             pp.role AS participation_role, pp.joined_at AS participation_joined_at,
-            (SELECT count(*) FROM project_participations pp2 WHERE pp2.project_id = p.id) AS volunteer_count
+            (SELECT count(*) FROM project_participations pp2 WHERE pp2.project_id = p.id) AS volunteer_count,
+            COALESCE(r.avg_score, 0) AS avg_rating,
+            COALESCE(r.rating_count, 0) AS rating_count
        FROM project_participations pp
        JOIN projects p ON p.id = pp.project_id
        JOIN categories c ON c.id = p.category_id
+       LEFT JOIN (
+         SELECT project_id,
+                ROUND(AVG(score)::numeric, 1) AS avg_score,
+                count(*)::int AS rating_count
+           FROM project_ratings
+          GROUP BY project_id
+       ) r ON r.project_id = p.id
       WHERE pp.user_id = $1
       ORDER BY p.start_date`,
     [userId]
