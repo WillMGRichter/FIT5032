@@ -3,9 +3,11 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { useAuthStore } from '@/stores/authStore'
+import { usePermissions } from '@/composables/usePermissions'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { isAdmin } = usePermissions()
 
 const isMenuOpen = ref(false)
 
@@ -61,12 +63,11 @@ async function handleLogout() {
         </RouterLink>
 
         <template v-if="authStore.isAuthenticated.value">
-          <RouterLink
-            to="/profile"
-            class="nav-links__account"
-            @click="closeMenu"
-          >
+          <RouterLink to="/profile" class="nav-links__account" @click="closeMenu">
             Profile
+          </RouterLink>
+          <RouterLink v-if="isAdmin" to="/admin" class="nav-links__admin" @click="closeMenu">
+            Admin
           </RouterLink>
           <button type="button" class="nav-links__logout" @click="handleLogout">Logout</button>
         </template>
@@ -181,6 +182,18 @@ async function handleLogout() {
   text-align: left;
 }
 
+.nav-links__admin {
+  padding: var(--spacing-md) var(--spacing-lg);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-md);
+}
+
+.nav-links__admin:hover {
+  color: var(--color-primary-dark);
+  background-color: var(--color-background);
+}
+
 .nav-links__logout:hover {
   color: var(--color-error);
   text-decoration: underline;
@@ -212,6 +225,19 @@ async function handleLogout() {
   .nav-links__logout {
     padding: var(--spacing-xs) var(--spacing-md);
     font-size: inherit;
+  }
+
+  .nav-links__admin {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: inherit;
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+  }
+
+  .nav-links__admin:hover {
+    background-color: var(--color-primary);
+    color: var(--color-surface);
   }
 
   .nav-links__cta {

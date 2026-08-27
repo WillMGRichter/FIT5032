@@ -63,6 +63,17 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/admin',
+    name: 'admin',
+    component: () => import('@/views/AdminView.vue'),
+    meta: { requiresAuth: true, requiredRole: 'admin' },
+  },
+  {
+    path: '/unauthorized',
+    name: 'unauthorized',
+    component: () => import('@/views/UnauthorizedView.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundView.vue'),
@@ -80,6 +91,13 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated.value) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  if (to.meta.requiredRole) {
+    const userRole = authStore.state.user?.role
+    if (userRole !== to.meta.requiredRole) {
+      return { name: 'unauthorized' }
+    }
   }
 
   if (to.meta.guestOnly && authStore.isAuthenticated.value) {

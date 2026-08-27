@@ -23,5 +23,17 @@ export function usePermissions() {
     return project.status !== 'cancelled' && project.status !== 'completed'
   }
 
-  return { user, isAuthenticated, isAdmin, canCreateProject, canManageProject, canJoinProject }
+  function canAccessAdmin() {
+    return isAdmin.value
+  }
+
+  return {
+    user,
+    isAuthenticated,
+    isAdmin,
+    canCreateProject,
+    canManageProject,
+    canJoinProject,
+    canAccessAdmin,
+  }
 }
