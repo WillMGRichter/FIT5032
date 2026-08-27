@@ -69,6 +69,18 @@ const routes = [
     meta: { requiresAuth: true, requiredRole: 'admin' },
   },
   {
+    path: '/admin/users',
+    name: 'admin-users',
+    component: () => import('@/views/AdminUsersView.vue'),
+    meta: { requiresAuth: true, requiredRole: 'admin' },
+  },
+  {
+    path: '/admin/projects',
+    name: 'admin-projects',
+    component: () => import('@/views/AdminProjectsView.vue'),
+    meta: { requiresAuth: true, requiredRole: 'admin' },
+  },
+  {
     path: '/unauthorized',
     name: 'unauthorized',
     component: () => import('@/views/UnauthorizedView.vue'),

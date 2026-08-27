@@ -139,6 +139,10 @@ onMounted(() => {
     <header class="admin__header">
       <h1 id="admin-heading">Admin Dashboard</h1>
       <p class="admin__intro">Manage users, projects, roles and view platform statistics.</p>
+      <nav class="admin__nav" aria-label="Admin navigation">
+        <RouterLink to="/admin/users" class="admin__nav-link">User Management</RouterLink>
+        <RouterLink to="/admin/projects" class="admin__nav-link">Project Management</RouterLink>
+      </nav>
     </header>
 
     <div v-if="isLoading" class="admin__state">Loading admin data&hellip;</div>
@@ -324,6 +328,30 @@ onMounted(() => {
 .admin__intro {
   margin-top: var(--spacing-sm);
   color: var(--color-text-secondary);
+}
+
+.admin__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.admin__nav-link {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+}
+
+.admin__nav-link:hover {
+  background-color: var(--color-primary-dark);
 }
 
 .admin__state {
