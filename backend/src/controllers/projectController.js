@@ -21,7 +21,7 @@ async function getProjectById(req, res, next) {
 
 async function createProject(req, res, next) {
   try {
-    const project = await projectService.createProject(req.body)
+    const project = await projectService.createProject(req.body, req.user)
     res.status(201).json({ data: project })
   } catch (error) {
     next(error)

@@ -178,7 +178,7 @@ function assertProjectId(id) {
   }
 }
 
-async function createProject(input) {
+async function createProject(input, user) {
   assertJsonObject(input)
   const values = await validateProjectData(input)
   const plantIds = await resolvePlantIds(input)
@@ -195,6 +195,7 @@ async function createProject(input) {
     endDate: values.endDate,
     capacity: values.capacity,
     status: values.status,
+    createdBy: user?.id ?? null,
   })
 
   if (plantIds.length > 0) {
