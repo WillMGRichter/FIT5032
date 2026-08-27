@@ -13,6 +13,7 @@ import { ApiError } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
 import { usePermissions } from '@/composables/usePermissions'
 import ProjectPlantList from '@/components/plant/ProjectPlantList.vue'
+import ProjectRating from '@/components/project/ProjectRating.vue'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
@@ -311,6 +312,8 @@ const spotsRemaining = computed(() =>
             :error="plantsError"
           />
         </div>
+
+        <ProjectRating :project-id="project.id" />
       </article>
     </template>
   </section>

@@ -3,6 +3,7 @@
 
 DROP TABLE IF EXISTS project_plants CASCADE;
 DROP TABLE IF EXISTS project_participations CASCADE;
+DROP TABLE IF EXISTS project_ratings CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
 DROP TABLE IF EXISTS plants CASCADE;
@@ -90,3 +91,17 @@ CREATE INDEX idx_projects_status ON projects (status);
 CREATE INDEX idx_participations_user ON project_participations (user_id);
 CREATE INDEX idx_project_plants_plant ON project_plants (plant_id);
 CREATE INDEX idx_sessions_user ON sessions (user_id);
+
+CREATE TABLE project_ratings (
+  id         BIGSERIAL PRIMARY KEY,
+  project_id BIGINT      NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  user_id    BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  score      INTEGER     NOT NULL CHECK (score BETWEEN 1 AND 5),
+  comment    TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (project_id, user_id)
+);
+
+CREATE INDEX idx_ratings_project ON project_ratings (project_id);
+CREATE INDEX idx_ratings_user ON project_ratings (user_id);
