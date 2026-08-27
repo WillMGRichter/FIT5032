@@ -4,6 +4,7 @@ import * as notificationService from '@/services/notificationService'
 
 const state = reactive({
   user: null,
+  firebaseUser: null,
   status: 'idle',
   unreadCount: 0,
 })
@@ -14,32 +15,52 @@ const isLoading = computed(() => state.status === 'loading')
 async function init() {
   if (state.status === 'ready') return
   state.status = 'loading'
-  try {
-    state.user = await authService.getCurrentUser()
-    if (state.user) {
-      const result = await notificationService.getUnreadCount()
-      state.unreadCount = result.count
-    }
-  } catch {
-    state.user = null
-  } finally {
-    state.status = 'ready'
-  }
+
+  return new Promise((resolve) => {
+    const unsubscribe = authService.onAuthChange(async (firebaseUser) => {
+      state.firebaseUser = firebaseUser
+      if (firebaseUser) {
+        try {
+          state.user = await authService.getCurrentUser()
+        } catch {
+          state.user = null
+        }
+        try {
+          const result = await notificationService.getUnreadCount()
+          state.unreadCount = result.count
+        } catch {
+          state.unreadCount = 0
+        }
+      } else {
+        state.user = null
+        state.unreadCount = 0
+      }
+      state.status = 'ready'
+      unsubscribe()
+      resolve()
+    })
+  })
 }
 
 async function login(credentials) {
-  const data = await authService.login(credentials)
-  state.user = data.user
-  const result = await notificationService.getUnreadCount()
-  state.unreadCount = result.count
-  return data.user
+  const user = await authService.login(credentials)
+  state.user = user
+  state.firebaseUser = { uid: user.firebaseUid, email: user.email }
+  try {
+    const result = await notificationService.getUnreadCount()
+    state.unreadCount = result.count
+  } catch {
+    state.unreadCount = 0
+  }
+  return user
 }
 
-async function register(user) {
-  const data = await authService.register(user)
-  state.user = data.user
+async function register(userData) {
+  const user = await authService.register(userData)
+  state.user = user
+  state.firebaseUser = { uid: user.firebaseUid, email: user.email }
   state.unreadCount = 0
-  return data.user
+  return user
 }
 
 async function logout() {
@@ -47,6 +68,7 @@ async function logout() {
     await authService.logout()
   } finally {
     state.user = null
+    state.firebaseUser = null
     state.unreadCount = 0
   }
 }

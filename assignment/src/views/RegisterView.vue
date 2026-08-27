@@ -2,7 +2,6 @@
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FormInput from '@/components/forms/FormInput.vue'
-import { ApiError } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
 
 const route = useRoute()
@@ -30,6 +29,17 @@ const errors = reactive({
 const isSubmitting = ref(false)
 const submitError = ref(null)
 const isSuccess = ref(false)
+
+function firebaseErrorMessage(code) {
+  const map = {
+    'auth/email-already-in-use': 'An account with this email already exists. Try logging in instead.',
+    'auth/invalid-email': 'Please enter a valid email address.',
+    'auth/weak-password': 'Password must be at least 6 characters.',
+    'auth/too-many-requests': 'Too many attempts. Please try again later.',
+    'auth/network-request-failed': 'Network error. Check your connection and try again.',
+  }
+  return map[code] || 'Something went wrong while creating your account. Please try again.'
+}
 
 function validateField(field) {
   switch (field) {
@@ -86,14 +96,6 @@ function onFieldUpdate({ field, value }) {
   submitError.value = null
 }
 
-function applyServerErrors(serverErrors) {
-  for (const [field, message] of Object.entries(serverErrors)) {
-    if (field in errors) {
-      errors[field] = message
-    }
-  }
-}
-
 async function handleSubmit() {
   if (isSubmitting.value || isSuccess.value) return
 
@@ -119,8 +121,13 @@ async function handleSubmit() {
       router.push(typeof route.query.redirect === 'string' ? route.query.redirect : '/')
     }, 1000)
   } catch (err) {
-    if (err instanceof ApiError && err.details?.errors) {
-      applyServerErrors(err.details.errors)
+    if (err?.code && err.code.startsWith('auth/')) {
+      submitError.value = firebaseErrorMessage(err.code)
+    } else if (err?.status === 409 && err.details?.errors) {
+      const serverErrors = err.details.errors
+      for (const [field, message] of Object.entries(serverErrors)) {
+        if (field in errors) errors[field] = message
+      }
       submitError.value = 'Please review the highlighted fields.'
     } else {
       submitError.value =

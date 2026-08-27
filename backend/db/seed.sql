@@ -10,10 +10,10 @@ INSERT INTO categories (id, name, description) VALUES
   ('waterway-care', 'Waterway Care', 'Protecting and revegetating creeks, rivers and wetlands across the Yarra and Maribyrnong catchments.'),
   ('green-roof-wall', 'Green Roof & Wall', 'Turning rooftops and bare walls into living infrastructure that cools the city and slows stormwater.');
 
-INSERT INTO users (email, password_hash, first_name, last_name, role) VALUES
-  ('maya.thompson@greenlink.org.au', '$2b$10$seedplaceholderhashvalueforlocaldevonly1', 'Maya', 'Thompson', 'admin'),
-  ('arjun.patel@example.com',         '$2b$10$seedplaceholderhashvalueforlocaldevonly2', 'Arjun', 'Patel', 'member'),
-  ('chloe.zhang@example.com',         '$2b$10$seedplaceholderhashvalueforlocaldevonly3', 'Chloe', 'Zhang', 'member');
+INSERT INTO users (email, first_name, last_name, role) VALUES
+  ('maya.thompson@greenlink.org.au', 'Maya', 'Thompson', 'admin'),
+  ('arjun.patel@example.com',         'Arjun', 'Patel', 'member'),
+  ('chloe.zhang@example.com',         'Chloe', 'Zhang', 'member');
 
 INSERT INTO plants
   (common_name, scientific_name, description, image, habitat, maintenance_level)

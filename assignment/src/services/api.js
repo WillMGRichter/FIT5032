@@ -1,3 +1,5 @@
+import { auth } from './firebase'
+
 const BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:3000'
 
 export class ApiError extends Error {
@@ -23,8 +25,21 @@ async function request(path, { method = 'GET', body, query } = {}) {
   const url = buildUrl(path, query)
 
   const fetchOptions = { method, credentials: 'include' }
+  const headers = {}
+
   if (body !== undefined) {
-    fetchOptions.headers = { 'Content-Type': 'application/json' }
+    headers['Content-Type'] = 'application/json'
+  }
+
+  if (auth.currentUser) {
+    const token = await auth.currentUser.getIdToken()
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  if (Object.keys(headers).length) {
+    fetchOptions.headers = headers
+  }
+  if (body !== undefined) {
     fetchOptions.body = JSON.stringify(body)
   }
 

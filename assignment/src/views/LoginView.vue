@@ -2,7 +2,6 @@
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FormInput from '@/components/forms/FormInput.vue'
-import { ApiError } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
 
 const route = useRoute()
@@ -23,6 +22,19 @@ const errors = reactive({
 
 const isSubmitting = ref(false)
 const submitError = ref(null)
+
+function firebaseErrorMessage(code) {
+  const map = {
+    'auth/invalid-credential': 'Invalid email or password. Please try again.',
+    'auth/user-disabled': 'This account has been disabled. Contact support.',
+    'auth/user-not-found': 'No account found with this email.',
+    'auth/wrong-password': 'Invalid email or password. Please try again.',
+    'auth/too-many-requests': 'Too many attempts. Please try again later.',
+    'auth/network-request-failed': 'Network error. Check your connection and try again.',
+    'auth/invalid-email': 'Please enter a valid email address.',
+  }
+  return map[code] || 'Something went wrong while logging you in. Please try again.'
+}
 
 function validateField(field) {
   switch (field) {
@@ -68,13 +80,9 @@ async function handleSubmit() {
         : '/'
     router.push(redirect)
   } catch (err) {
-    if (err instanceof ApiError && err.status === 400 && err.details?.errors) {
-      for (const [field, message] of Object.entries(err.details.errors)) {
-        if (field in errors) errors[field] = message
-      }
-    } else if (err instanceof ApiError && err.status === 401) {
-      submitError.value = 'Invalid email or password. Please try again.'
-    } else if (err instanceof ApiError && err.status === 0) {
+    if (err?.code && err.code.startsWith('auth/')) {
+      submitError.value = firebaseErrorMessage(err.code)
+    } else if (err && err.status === 0) {
       submitError.value = 'Could not reach the GreenLink API. Check your connection and try again.'
     } else {
       submitError.value =

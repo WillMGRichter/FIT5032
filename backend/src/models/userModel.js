@@ -3,6 +3,7 @@ const pool = require('../config/db')
 function mapRow(row) {
   return {
     id: row.id,
+    firebaseUid: row.firebase_uid ?? null,
     email: row.email,
     firstName: row.first_name,
     lastName: row.last_name,
@@ -15,14 +16,19 @@ function mapRow(row) {
   }
 }
 
-const PUBLIC_COLUMNS = `id, email, first_name, last_name, role, profile_image, bio, location, created_at`
+const PUBLIC_COLUMNS = `id, firebase_uid, email, first_name, last_name, role, profile_image, bio, location, created_at`
+
+async function findByFirebaseUid(firebaseUid) {
+  const { rows } = await pool.query(`SELECT ${PUBLIC_COLUMNS} FROM users WHERE firebase_uid = $1`, [firebaseUid])
+  return rows[0] ? mapRow(rows[0]) : null
+}
 
 async function findByEmail(email) {
   const { rows } = await pool.query(
-    'SELECT id, email, password_hash, first_name, last_name, role FROM users WHERE lower(email) = lower($1)',
+    `SELECT ${PUBLIC_COLUMNS} FROM users WHERE lower(email) = lower($1)`,
     [email],
   )
-  return rows[0] ?? null
+  return rows[0] ? mapRow(rows[0]) : null
 }
 
 async function findById(id) {
@@ -38,12 +44,12 @@ async function emailExistsExcept(email, userId) {
   return rows.length > 0
 }
 
-async function create({ email, passwordHash, firstName, lastName }) {
+async function createWithFirebase({ firebaseUid, email, firstName, lastName }) {
   const { rows } = await pool.query(
-    `INSERT INTO users (email, password_hash, first_name, last_name)
+    `INSERT INTO users (firebase_uid, email, first_name, last_name)
      VALUES ($1, $2, $3, $4)
      RETURNING ${PUBLIC_COLUMNS}`,
-    [email.toLowerCase(), passwordHash, firstName, lastName],
+    [firebaseUid, email.toLowerCase(), firstName, lastName],
   )
   return mapRow(rows[0])
 }
@@ -65,4 +71,4 @@ async function update(id, { email, firstName, lastName, bio, location, profileIm
   return rows[0] ? mapRow(rows[0]) : null
 }
 
-module.exports = { findByEmail, findById, emailExistsExcept, create, update }
+module.exports = { findByFirebaseUid, findByEmail, findById, emailExistsExcept, createWithFirebase, update }

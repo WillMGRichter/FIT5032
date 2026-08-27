@@ -1,18 +1,37 @@
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from 'firebase/auth'
+import { auth } from './firebase'
 import { apiRequest } from './api'
 
-export async function register(user) {
-  return apiRequest('/api/auth/register', { method: 'POST', body: user })
+export function onAuthChange(callback) {
+  return onAuthStateChanged(auth, callback)
 }
 
-export async function login(credentials) {
-  return apiRequest('/api/auth/login', { method: 'POST', body: credentials })
+export async function register({ firstName, lastName, email, password }) {
+  await createUserWithEmailAndPassword(auth, email, password)
+  const data = await apiRequest('/api/auth/sync', {
+    method: 'POST',
+    body: { firstName, lastName },
+  })
+  return data?.user ?? null
+}
+
+export async function login({ email, password }) {
+  await signInWithEmailAndPassword(auth, email, password)
+  const data = await apiRequest('/api/auth/me')
+  return data?.user ?? null
 }
 
 export async function logout() {
-  return apiRequest('/api/auth/logout', { method: 'POST' })
+  await signOut(auth)
 }
 
 export async function getCurrentUser() {
+  if (!auth.currentUser) return null
   const data = await apiRequest('/api/auth/me')
   return data?.user ?? null
 }

@@ -1,41 +1,35 @@
-const sessionModel = require('../models/sessionModel')
-const authService = require('../services/authService')
+const admin = require('firebase-admin')
+const userModel = require('../models/userModel')
 
-const SESSION_COOKIE = 'gl_session'
+let firebaseReady = false
 
-function parseCookies(req) {
-  const header = req.headers.cookie
-  const cookies = {}
-  if (!header) return cookies
-  for (const part of header.split(';')) {
-    const separatorIndex = part.indexOf('=')
-    if (separatorIndex === -1) continue
-    const key = part.slice(0, separatorIndex).trim()
-    const value = part.slice(separatorIndex + 1).trim()
-    cookies[key] = decodeURIComponent(value)
+function initFirebase() {
+  if (firebaseReady) return
+  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT
+  if (!serviceAccountPath) {
+    console.warn('FIREBASE_SERVICE_ACCOUNT not set — Firebase token verification disabled')
+    return
   }
-  return cookies
-}
-
-function setSessionCookie(res, sessionId) {
-  const maxAgeSeconds = sessionModel.SESSION_DURATION_DAYS * 24 * 60 * 60
-  res.setHeader(
-    'Set-Cookie',
-    `${SESSION_COOKIE}=${encodeURIComponent(sessionId)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}`,
-  )
-}
-
-function clearSessionCookie(res) {
-  res.setHeader('Set-Cookie', `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`)
+  const serviceAccount = require(serviceAccountPath)
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) })
+  firebaseReady = true
 }
 
 async function attachUser(req, res, next) {
   try {
-    const sessionId = parseCookies(req)[SESSION_COOKIE]
-    req.sessionId = sessionId ?? null
+    if (!firebaseReady) initFirebase()
 
-    if (sessionId) {
-      req.user = await authService.getUserForSession(sessionId)
+    const authHeader = req.headers.authorization
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.slice(7)
+      try {
+        const decoded = await admin.auth().verifyIdToken(token)
+        req.firebaseUid = decoded.uid
+        req.firebaseEmail = decoded.email ?? null
+        req.user = await userModel.findByFirebaseUid(decoded.uid)
+      } catch {
+        // Token invalid or expired — continue without user
+      }
     }
     next()
   } catch (error) {
@@ -62,11 +56,4 @@ function requireRole(...roles) {
   }
 }
 
-module.exports = {
-  SESSION_COOKIE,
-  setSessionCookie,
-  clearSessionCookie,
-  attachUser,
-  requireAuth,
-  requireRole,
-}
+module.exports = { attachUser, requireAuth, requireRole }

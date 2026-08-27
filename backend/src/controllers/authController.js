@@ -1,32 +1,10 @@
 const authService = require('../services/authService')
 const projectService = require('../services/projectService')
-const { setSessionCookie, clearSessionCookie } = require('../middleware/auth')
 
-async function register(req, res, next) {
+async function syncUser(req, res, next) {
   try {
-    const { user, sessionId } = await authService.registerUser(req.body)
-    setSessionCookie(res, sessionId)
-    res.status(201).json({ data: { user } })
-  } catch (error) {
-    next(error)
-  }
-}
-
-async function login(req, res, next) {
-  try {
-    const { user, sessionId } = await authService.loginUser(req.body)
-    setSessionCookie(res, sessionId)
+    const user = await authService.syncUser(req.firebaseUid, req.firebaseEmail, req.body)
     res.json({ data: { user } })
-  } catch (error) {
-    next(error)
-  }
-}
-
-async function logout(req, res, next) {
-  try {
-    await authService.logoutUser(req.sessionId)
-    clearSessionCookie(res)
-    res.json({ data: { success: true } })
   } catch (error) {
     next(error)
   }
@@ -69,4 +47,4 @@ async function getMyProjects(req, res, next) {
   }
 }
 
-module.exports = { register, login, logout, me, getProfile, updateProfile, getMyProjects }
+module.exports = { syncUser, me, getProfile, updateProfile, getMyProjects }
