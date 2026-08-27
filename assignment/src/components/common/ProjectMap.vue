@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+import { escapeHtml } from '@/utils/sanitize'
 
 const props = defineProps({
   projects: { type: Array, default: () => [] },
@@ -31,20 +32,6 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
   shadowUrl: markerShadow,
 })
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(
-    /[&<>"']/g,
-    (char) =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-      })[char] ?? char,
-  )
-}
 
 const mappableProjects = computed(() =>
   props.projects.filter((project) => isValidCoord(project.latitude, project.longitude)),
