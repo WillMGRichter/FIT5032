@@ -2,7 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
-import { getPlantById } from '@/services/plantService'
+import { getPlantById, getProjectsByPlant } from '@/services/plantService'
+import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
 
@@ -11,20 +12,40 @@ const isLoading = ref(true)
 const error = ref(null)
 const imageFailed = ref(false)
 
+const associatedProjects = ref([])
+const projectsLoading = ref(false)
+const projectsError = ref('')
+
 async function loadPlant(id) {
   if (!id) return
   isLoading.value = true
   error.value = null
   plant.value = null
   imageFailed.value = false
+  associatedProjects.value = []
+  projectsError.value = ''
   try {
     plant.value = await getPlantById(id)
+    if (plant.value) loadProjects(id)
   } catch (err) {
     error.value =
       err && err.message ? err.message : 'Something went wrong while loading this plant.'
     plant.value = null
   } finally {
     isLoading.value = false
+  }
+}
+
+async function loadProjects(id) {
+  projectsLoading.value = true
+  projectsError.value = ''
+  try {
+    associatedProjects.value = (await getProjectsByPlant(id)) ?? []
+  } catch {
+    projectsError.value = 'Could not load associated projects.'
+    associatedProjects.value = []
+  } finally {
+    projectsLoading.value = false
   }
 }
 
@@ -71,7 +92,7 @@ const maintenanceLabel = computed(() =>
           <img
             v-if="plant.image && !imageFailed"
             :src="plant.image"
-            :alt="plant.commonName"
+            :alt="`${plant.commonName} native plant`"
             class="plant-details__image"
             @error="imageFailed = true"
           />
@@ -100,6 +121,48 @@ const maintenanceLabel = computed(() =>
 
           <h2 class="plant-details__section-title">About this plant</h2>
           <p class="plant-details__description">{{ plant.description }}</p>
+        </div>
+
+        <div class="plant-details__projects-section">
+          <h2 class="plant-details__section-title">Used in projects</h2>
+
+          <p v-if="projectsLoading" class="plant-details__projects-state">
+            Loading projects&hellip;
+          </p>
+
+          <p
+            v-else-if="projectsError"
+            role="alert"
+            class="plant-details__projects-state plant-details__projects-state--error"
+          >
+            {{ projectsError }}
+          </p>
+
+          <ul v-else-if="associatedProjects.length > 0" class="plant-details__project-list">
+            <li
+              v-for="project in associatedProjects"
+              :key="project.id"
+              class="plant-details__project-item"
+            >
+              <RouterLink
+                :to="{ name: 'project-details', params: { id: project.id } }"
+                class="plant-details__project-link"
+              >
+                <span class="plant-details__project-title">{{ project.title }}</span>
+                <span class="plant-details__project-meta">
+                  {{ project.location }} &middot; {{ formatDate(project.startDate) }} &ndash;
+                  {{ formatDate(project.endDate) }}
+                </span>
+                <span class="plant-details__project-status" :data-status="project.status">
+                  {{ project.status }}
+                </span>
+              </RouterLink>
+            </li>
+          </ul>
+
+          <p v-else class="plant-details__projects-state">
+            This plant is not currently used in any projects.
+          </p>
         </div>
       </article>
     </template>
@@ -259,5 +322,90 @@ const maintenanceLabel = computed(() =>
 
 .plant-details__description {
   max-width: 70ch;
+}
+
+.plant-details__projects-section {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-background);
+}
+
+@media (min-width: 768px) {
+  .plant-details__projects-section {
+    padding: var(--spacing-lg) var(--spacing-xl);
+  }
+}
+
+.plant-details__projects-state {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.plant-details__projects-state--error {
+  color: var(--color-error);
+}
+
+.plant-details__project-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.plant-details__project-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--spacing-xs) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  text-decoration: none;
+  color: inherit;
+}
+
+.plant-details__project-link:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.plant-details__project-title {
+  font-weight: var(--font-weight-semibold);
+}
+
+.plant-details__project-link:hover .plant-details__project-title {
+  color: var(--color-primary);
+}
+
+.plant-details__project-meta {
+  flex-grow: 1;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.plant-details__project-status {
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-background);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+}
+
+.plant-details__project-status[data-status='active'] {
+  color: var(--color-success);
+}
+
+.plant-details__project-status[data-status='planned'] {
+  color: #8d6e00;
+}
+
+.plant-details__project-status[data-status='completed'] {
+  color: var(--color-text-secondary);
+}
+
+.plant-details__project-status[data-status='cancelled'] {
+  color: var(--color-error);
 }
 </style>

@@ -73,6 +73,18 @@ function onImageError() {
   box-shadow: var(--shadow-md);
 }
 
+.plant-card:focus-within {
+  box-shadow:
+    0 0 0 2px var(--color-primary),
+    var(--shadow-md);
+}
+
+.plant-card__name a:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
 .plant-card__media {
   position: relative;
   aspect-ratio: 4 / 3;

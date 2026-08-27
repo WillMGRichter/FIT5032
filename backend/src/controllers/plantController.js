@@ -19,4 +19,13 @@ async function getPlantById(req, res, next) {
   }
 }
 
-module.exports = { getPlants, getPlantById }
+async function getProjectsByPlant(req, res, next) {
+  try {
+    const projects = await plantService.getProjectsByPlant(req.params.id)
+    res.json({ data: projects })
+  } catch (error) {
+    next(error)
+  }
+}
+
+module.exports = { getPlants, getPlantById, getProjectsByPlant }

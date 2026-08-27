@@ -9,6 +9,8 @@ const error = ref(null)
 
 const searchQuery = ref('')
 const selectedMaintenance = ref('')
+const selectedHabitat = ref('')
+const sortBy = ref('name')
 
 const maintenanceOptions = [
   { value: 'low', label: 'Low maintenance' },
@@ -16,26 +18,55 @@ const maintenanceOptions = [
   { value: 'high', label: 'High maintenance' },
 ]
 
+const SORT_OPTIONS = [
+  { value: 'name', label: 'Common name' },
+  { value: 'maintenance', label: 'Maintenance level' },
+]
+
+const habitatOptions = computed(() => {
+  const habitats = plants.value.map((p) => p.habitat).filter(Boolean)
+  return [...new Set(habitats)].sort()
+})
+
 const hasActiveFilters = computed(
-  () => searchQuery.value.trim() !== '' || selectedMaintenance.value !== '',
+  () =>
+    searchQuery.value.trim() !== '' ||
+    selectedMaintenance.value !== '' ||
+    selectedHabitat.value !== '',
 )
 
 function clearFilters() {
   searchQuery.value = ''
   selectedMaintenance.value = ''
+  selectedHabitat.value = ''
+  sortBy.value = 'name'
 }
 
 const filteredPlants = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
-  return plants.value.filter((plant) => {
+
+  let list = plants.value.filter((plant) => {
     const matchesQuery =
       query === '' ||
       plant.commonName.toLowerCase().includes(query) ||
       plant.scientificName.toLowerCase().includes(query)
     const matchesMaintenance =
       selectedMaintenance.value === '' || plant.maintenanceLevel === selectedMaintenance.value
-    return matchesQuery && matchesMaintenance
+    const matchesHabitat = selectedHabitat.value === '' || plant.habitat === selectedHabitat.value
+    return matchesQuery && matchesMaintenance && matchesHabitat
   })
+
+  const key = sortBy.value
+  if (key === 'maintenance') {
+    const order = { low: 0, medium: 1, high: 2 }
+    list = [...list].sort(
+      (a, b) => (order[a.maintenanceLevel] ?? 0) - (order[b.maintenanceLevel] ?? 0),
+    )
+  } else {
+    list = [...list].sort((a, b) => (a.commonName ?? '').localeCompare(b.commonName ?? ''))
+  }
+
+  return list
 })
 
 async function loadPage() {
@@ -94,6 +125,17 @@ onMounted(loadPage)
             {{ option.label }}
           </option>
         </select>
+        <select v-model="selectedHabitat" class="plants__input" aria-label="Filter by habitat">
+          <option value="">All habitats</option>
+          <option v-for="habitat in habitatOptions" :key="habitat" :value="habitat">
+            {{ habitat }}
+          </option>
+        </select>
+        <select v-model="sortBy" class="plants__input" aria-label="Sort by">
+          <option v-for="option in SORT_OPTIONS" :key="option.value" :value="option.value">
+            Sort: {{ option.label }}
+          </option>
+        </select>
         <button
           v-if="hasActiveFilters"
           type="button"
@@ -121,7 +163,7 @@ onMounted(loadPage)
 
       <div v-else class="plants__state plants__state--empty">
         <h2>No plants match your search</h2>
-        <p>Try different keywords or remove the maintenance filter.</p>
+        <p>Try changing your search or filters.</p>
         <button type="button" class="plants__button" @click="clearFilters">Clear Filters</button>
       </div>
     </template>
@@ -193,7 +235,7 @@ onMounted(loadPage)
 
 @media (min-width: 768px) {
   .plants__toolbar {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
     align-items: center;
   }
 

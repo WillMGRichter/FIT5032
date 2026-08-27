@@ -307,12 +307,38 @@ async function deleteById(id) {
   return rowCount > 0
 }
 
+async function findByPlant(plantId) {
+  const { rows } = await pool.query(
+    `SELECT p.id, p.title, p.location, p.status, p.start_date, p.end_date, p.image,
+            pp.quantity,
+            c.name AS category_name
+       FROM project_plants pp
+       JOIN projects p ON p.id = pp.project_id
+       JOIN categories c ON c.id = p.category_id
+      WHERE pp.plant_id = $1
+      ORDER BY p.start_date`,
+    [plantId]
+  )
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    location: row.location,
+    status: row.status,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    image: row.image,
+    quantity: row.quantity,
+    category: { name: row.category_name },
+  }))
+}
+
 module.exports = {
   findAll,
   findById,
   create,
   update,
   deleteById,
+  findByPlant,
   findJoinedByUser,
   findParticipation,
   countParticipations,

@@ -16,3 +16,7 @@ export async function getPlantById(id) {
     throw error
   }
 }
+
+export async function getProjectsByPlant(plantId) {
+  return apiRequest(`/api/plants/${encodeURIComponent(plantId)}/projects`)
+}

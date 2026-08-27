@@ -1,4 +1,5 @@
 const plantModel = require('../models/plantModel')
+const projectModel = require('../models/projectModel')
 
 const VALID_LEVELS = ['low', 'medium', 'high']
 
@@ -28,4 +29,19 @@ async function getPlantById(id) {
   return plant
 }
 
-module.exports = { getPlants, getPlantById }
+async function getProjectsByPlant(plantId) {
+  if (!Number.isInteger(Number(plantId))) {
+    const error = new Error('Plant id must be a number')
+    error.status = 400
+    throw error
+  }
+  const plant = await plantModel.findById(plantId)
+  if (!plant) {
+    const error = new Error(`Plant with id ${id} not found`)
+    error.status = 404
+    throw error
+  }
+  return projectModel.findByPlant(plantId)
+}
+
+module.exports = { getPlants, getPlantById, getProjectsByPlant }
