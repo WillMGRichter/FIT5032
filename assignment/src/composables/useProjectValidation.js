@@ -9,6 +9,7 @@ export const PROJECT_STATUS_OPTIONS = [
   { value: 'planned', label: 'Planned' },
   { value: 'active', label: 'Active' },
   { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
 ]
 
 export function createEmptyProjectForm() {

@@ -112,6 +112,10 @@ watch(
 
 const isOpenForParticipation = computed(() => ['planned', 'active'].includes(project.value?.status))
 
+const isCompleted = computed(() => project.value?.status === 'completed')
+
+const isCancelled = computed(() => project.value?.status === 'cancelled')
+
 const hasSpotsRemaining = computed(() => spotsRemaining.value > 0)
 
 async function handleJoin() {
@@ -254,8 +258,16 @@ const spotsRemaining = computed(() =>
               <dd>{{ statusLabel }}</dd>
             </div>
             <div class="details__meta-item">
-              <dt>Volunteer spots</dt>
-              <dd>{{ spotsRemaining }} of {{ project.capacity }} left</dd>
+              <dt>Volunteers</dt>
+              <dd>
+                {{ project.volunteerCount ?? 0 }} / {{ project.capacity }} participants
+                <span
+                  v-if="isOpenForParticipation && hasSpotsRemaining"
+                  class="details__spots-remaining"
+                >
+                  &middot; {{ spotsRemaining }} place{{ spotsRemaining === 1 ? '' : 's' }} remaining
+                </span>
+              </dd>
             </div>
             <div class="details__meta-item" v-if="project.creator">
               <dt>Organiser</dt>
@@ -271,6 +283,18 @@ const spotsRemaining = computed(() =>
             >
               Log in to join
             </RouterLink>
+
+            <template v-else-if="isCancelled">
+              <span class="details__state-pill details__state-pill--cancelled"
+                >Project Cancelled</span
+              >
+            </template>
+
+            <template v-else-if="isCompleted">
+              <span class="details__state-pill details__state-pill--completed"
+                >Project Completed</span
+              >
+            </template>
 
             <template v-else-if="isOpenForParticipation">
               <template v-if="isParticipating">
@@ -295,8 +319,6 @@ const spotsRemaining = computed(() =>
               </button>
               <span v-else class="details__state-pill details__state-pill--full">Project Full</span>
             </template>
-
-            <span v-else class="details__state-pill">Registration Closed</span>
           </div>
 
           <p v-if="actionError" role="alert" class="details__action-error">{{ actionError }}</p>
@@ -591,6 +613,24 @@ const spotsRemaining = computed(() =>
 .details__join:disabled,
 .details__leave:disabled {
   opacity: 0.7;
+}
+
+.details__state-pill--full {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.details__state-pill--completed {
+  color: var(--color-text-secondary);
+}
+
+.details__state-pill--cancelled {
+  color: var(--color-error);
+}
+
+.details__spots-remaining {
+  color: var(--color-success);
+  font-weight: var(--font-weight-medium);
 }
 
 .details__state-pill,

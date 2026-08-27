@@ -24,6 +24,7 @@ const statusOptions = [
   { value: 'planned', label: 'Planned' },
   { value: 'active', label: 'Active' },
   { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
 ]
 
 async function loadPage() {

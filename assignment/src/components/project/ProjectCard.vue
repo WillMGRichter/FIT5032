@@ -28,6 +28,17 @@ const spotsRemaining = computed(() =>
   Math.max((props.project.capacity ?? 0) - (props.project.volunteerCount ?? 0), 0),
 )
 
+const isOpenForParticipation = computed(() => ['planned', 'active'].includes(props.project.status))
+
+const statusHint = computed(() => {
+  const s = props.project.status
+  if (s === 'completed') return 'Completed'
+  if (s === 'cancelled') return 'Cancelled'
+  if (!isOpenForParticipation.value) return null
+  if (spotsRemaining.value === 0) return 'Full'
+  return null
+})
+
 function onImageError() {
   imageFailed.value = true
 }
@@ -64,7 +75,12 @@ function onImageError() {
     <footer class="project-card__footer">
       <div class="project-card__meta">
         <p class="project-card__dates">{{ dateRange }}</p>
-        <p class="project-card__spots">{{ spotsRemaining }} of {{ project.capacity }} spots left</p>
+        <p class="project-card__participants">
+          {{ project.volunteerCount ?? 0 }} / {{ project.capacity }} participants
+        </p>
+        <p v-if="statusHint" class="project-card__hint project-card__hint--status">
+          {{ statusHint }}
+        </p>
       </div>
       <RouterLink
         :to="{ name: 'project-details', params: { id: project.id } }"
@@ -207,6 +223,15 @@ function onImageError() {
 
 .project-card__spots {
   color: var(--color-text-secondary);
+}
+
+.project-card__participants {
+  font-weight: var(--font-weight-medium);
+}
+
+.project-card__hint--status {
+  color: var(--color-text-secondary);
+  font-style: italic;
 }
 
 .project-card__action {

@@ -268,7 +268,12 @@ function isUpcoming(project) {
               :to="{ name: 'project-details', params: { id: project.id } }"
               class="activity__link"
             >
-              <span class="activity__title">{{ project.title }}</span>
+              <span class="activity__title">
+                {{ project.title }}
+                <span class="activity__status-badge" :data-status="project.status">
+                  {{ project.status }}
+                </span>
+              </span>
               <span class="activity__meta">
                 {{ formatDate(project.startDate) }} – {{ formatDate(project.endDate) }}
               </span>
@@ -297,6 +302,9 @@ function isUpcoming(project) {
             >
               <span class="activity__title">
                 {{ project.title }}
+                <span class="activity__status-badge" :data-status="project.status">
+                  {{ project.status }}
+                </span>
                 <span v-if="isUpcoming(project)" class="activity__upcoming">Upcoming</span>
               </span>
               <span class="activity__meta">
@@ -562,6 +570,34 @@ function isUpcoming(project) {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   vertical-align: middle;
+}
+
+.activity__status-badge {
+  display: inline-block;
+  margin-left: var(--spacing-sm);
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-background);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: capitalize;
+  vertical-align: middle;
+}
+
+.activity__status-badge[data-status='planned'] {
+  color: #8d6e00;
+}
+
+.activity__status-badge[data-status='active'] {
+  color: var(--color-success);
+}
+
+.activity__status-badge[data-status='completed'] {
+  color: var(--color-text-secondary);
+}
+
+.activity__status-badge[data-status='cancelled'] {
+  color: var(--color-error);
 }
 
 .activity__action {
