@@ -4,6 +4,7 @@
 DROP TABLE IF EXISTS project_plants CASCADE;
 DROP TABLE IF EXISTS project_participations CASCADE;
 DROP TABLE IF EXISTS project_ratings CASCADE;
+DROP TABLE IF EXISTS notifications CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
 DROP TABLE IF EXISTS plants CASCADE;
@@ -105,3 +106,16 @@ CREATE TABLE project_ratings (
 
 CREATE INDEX idx_ratings_project ON project_ratings (project_id);
 CREATE INDEX idx_ratings_user ON project_ratings (user_id);
+
+CREATE TABLE notifications (
+  id         BIGSERIAL PRIMARY KEY,
+  user_id    BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  title      VARCHAR(120) NOT NULL,
+  message    TEXT         NOT NULL,
+  is_read    BOOLEAN     NOT NULL DEFAULT FALSE,
+  link       VARCHAR(255),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_notifications_user ON notifications (user_id);
+CREATE INDEX idx_notifications_user_read ON notifications (user_id, is_read);

@@ -1,6 +1,7 @@
 const projectModel = require('../models/projectModel')
 const categoryModel = require('../models/categoryModel')
 const plantModel = require('../models/plantModel')
+const notificationService = require('./notificationService')
 
 const VALID_STATUSES = ['planned', 'active', 'completed', 'cancelled']
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -238,6 +239,21 @@ async function updateProject(id, input, user) {
   })
 
   await projectModel.setProjectPlants(projectId, plantIds)
+
+  const statusChanged = existing.status !== values.status
+  if (statusChanged) {
+    const participantIds = await getParticipationUserIds(projectId)
+    const recipientIds = participantIds.filter((id) => id !== user.id)
+    if (recipientIds.length) {
+      notifyParticipants(
+        recipientIds,
+        `Project status updated: ${values.status}`,
+        `"${values.title}" is now "${values.status}".`,
+        `/projects/${projectId}`,
+      )
+    }
+  }
+
   return projectModel.findById(projectId) ?? updated
 }
 
@@ -315,6 +331,19 @@ function participationError(message, status) {
   return error
 }
 
+async function getParticipationUserIds(projectId) {
+  const { rows } = await require('../config/db').query(
+    'SELECT user_id FROM project_participations WHERE project_id = $1',
+    [projectId],
+  )
+  return rows.map((r) => r.user_id)
+}
+
+function notifyParticipants(userIds, title, message, link) {
+  const items = userIds.map((userId) => ({ userId, title, message, link }))
+  notificationService.createManyNotifications(items).catch(() => {})
+}
+
 async function getParticipationStatus(projectId, userId) {
   assertProjectId(projectId)
   const participation = await projectModel.findParticipation(projectId, userId)
@@ -348,6 +377,15 @@ async function joinProject(projectId, userId) {
     throw participationError('You have already joined this project.', 409)
   }
 
+  if (project.createdBy && project.createdBy !== userId) {
+    notificationService.createNotification(
+      project.createdBy,
+      'New participant',
+      `A volunteer has joined "${project.title}".`,
+      `/projects/${projectId}`,
+    ).catch(() => {})
+  }
+
   return {
     participation,
     volunteerCount: volunteerCount + 1,
@@ -357,9 +395,19 @@ async function joinProject(projectId, userId) {
 async function leaveProject(projectId, userId) {
   assertProjectId(projectId)
 
+  const project = await projectModel.findById(projectId)
   const removed = await projectModel.deleteParticipation(projectId, userId)
   if (!removed) {
     throw participationError('You are not participating in this project.', 404)
+  }
+
+  if (project?.createdBy && project.createdBy !== userId) {
+    notificationService.createNotification(
+      project.createdBy,
+      'Participant left',
+      `A volunteer has left "${project.title}".`,
+      `/projects/${projectId}`,
+    ).catch(() => {})
   }
 
   const volunteerCount = await projectModel.countParticipations(projectId)

@@ -1,15 +1,18 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { useAuthStore } from '@/stores/authStore'
 import { usePermissions } from '@/composables/usePermissions'
+import NotificationsPanel from '@/components/notifications/NotificationsPanel.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const { isAdmin } = usePermissions()
 
 const isMenuOpen = ref(false)
+const isNotificationsOpen = ref(false)
+const notificationsRef = ref(null)
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -26,11 +29,34 @@ function closeMenu() {
   isMenuOpen.value = false
 }
 
+function toggleNotifications() {
+  isNotificationsOpen.value = !isNotificationsOpen.value
+}
+
+function closeNotifications() {
+  isNotificationsOpen.value = false
+}
+
+function handleClickOutside(event) {
+  if (notificationsRef.value && !notificationsRef.value.contains(event.target)) {
+    closeNotifications()
+  }
+}
+
 async function handleLogout() {
   closeMenu()
+  closeNotifications()
   await authStore.logout()
   router.push({ name: 'home' })
 }
+
+onMounted(() => {
+  document.addEventListener('mousedown', handleClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', handleClickOutside)
+})
 </script>
 
 <template>
@@ -58,11 +84,30 @@ async function handleLogout() {
         :class="{ 'is-open': isMenuOpen }"
         aria-label="Main navigation"
       >
-        <RouterLink v-for="item in navItems" :key="item.to" :to="item.to" @click="closeMenu">
+        <RouterLink v-for="item in navItems" :key="item.to" :to="item.to" @click="closeMenu; closeNotifications()">
           {{ item.label }}
         </RouterLink>
 
         <template v-if="authStore.isAuthenticated.value">
+          <div ref="notificationsRef" class="notifications-wrapper">
+            <button
+              type="button"
+              class="notifications-toggle"
+              aria-label="Notifications"
+              @click="toggleNotifications"
+            >
+              <AppIcon name="bell" :size="20" />
+              <span v-if="authStore.state.unreadCount > 0" class="notifications-badge">
+                {{ authStore.state.unreadCount > 99 ? '99+' : authStore.state.unreadCount }}
+              </span>
+            </button>
+            <NotificationsPanel
+              v-if="isNotificationsOpen"
+              class="notifications-dropdown"
+              @read-count-change="authStore.refreshUnreadCount"
+              @click.stop
+            />
+          </div>
           <RouterLink to="/profile" class="nav-links__account" @click="closeMenu">
             Profile
           </RouterLink>
@@ -197,6 +242,61 @@ async function handleLogout() {
 .nav-links__logout:hover {
   color: var(--color-error);
   text-decoration: underline;
+}
+
+/* Notifications */
+.notifications-wrapper {
+  position: relative;
+}
+
+.notifications-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: var(--spacing-xs);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.notifications-toggle:hover {
+  color: var(--color-primary-dark);
+  background-color: var(--color-background);
+}
+
+.notifications-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background-color: var(--color-error);
+  color: #fff;
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--spacing-xs);
+}
+
+@media (min-width: 768px) {
+  .notifications-dropdown {
+    right: 0;
+  }
 }
 
 @media (min-width: 768px) {

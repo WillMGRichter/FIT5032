@@ -14,6 +14,10 @@ defineProps({
         'thermometer',
         'feather',
         'map-pin',
+        'bell',
+        'check',
+        'trash',
+        'check-check',
       ].includes(value),
   },
   size: {
@@ -87,6 +91,26 @@ defineProps({
     <template v-else-if="name === 'map-pin'">
       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z" />
       <circle cx="12" cy="10" r="3" />
+    </template>
+
+    <template v-else-if="name === 'bell'">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </template>
+
+    <template v-else-if="name === 'check'">
+      <polyline points="20 6 9 17 4 12" />
+    </template>
+
+    <template v-else-if="name === 'check-check'">
+      <path d="M18 6 7 17l-5-5" />
+      <path d="m22 10-9.5 9.5L10 17" />
+    </template>
+
+    <template v-else-if="name === 'trash'">
+      <path d="M3 6h18" />
+      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
     </template>
   </svg>
 </template>
