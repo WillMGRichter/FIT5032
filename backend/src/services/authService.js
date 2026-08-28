@@ -1,4 +1,5 @@
 const userModel = require('../models/userModel')
+const { setFirebaseRoleClaim } = require('../middleware/auth')
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -55,6 +56,8 @@ async function syncUser(firebaseUid, firebaseEmail, input) {
 
     user = await userModel.createWithFirebase({ firebaseUid, email, firstName, lastName })
   }
+
+  setFirebaseRoleClaim(firebaseUid, user.role).catch(() => {})
 
   return user
 }

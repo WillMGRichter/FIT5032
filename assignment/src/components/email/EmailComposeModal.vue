@@ -4,12 +4,14 @@ import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import FormError from '@/components/forms/FormError.vue'
 import AppIcon from '@/components/common/AppIcon.vue'
+import { sendEmail, sendProjectEmail } from '@/services/emailService.js'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
   recipients: { type: Array, default: () => [] },
   recipientLabel: { type: String, default: 'All users' },
   projectTitle: { type: String, default: '' },
+  projectId: { type: String, default: '' },
 })
 
 const emit = defineEmits(['close', 'sent'])
@@ -117,17 +119,10 @@ async function handleSend() {
       attachments: attachment.value ? [attachment.value] : [],
     }
 
-    const { sendEmail: apiSend, sendProjectEmail } = await import('@/services/emailService.js')
-
-    if (props.projectTitle) {
-      const projectId = props.recipients[0]?.projectId
-      if (projectId) {
-        await sendProjectEmail(projectId, payload)
-      } else {
-        await apiSend(payload)
-      }
+    if (props.projectId) {
+      await sendProjectEmail(props.projectId, payload)
     } else {
-      await apiSend(payload)
+      await sendEmail(payload)
     }
 
     sendSuccess.value = true

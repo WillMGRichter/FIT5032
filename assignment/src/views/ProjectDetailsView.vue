@@ -375,6 +375,7 @@ const spotsRemaining = computed(() =>
       :recipients="participants"
       :recipient-label="emailRecipientLabel"
       :project-title="project?.title || ''"
+      :project-id="String(project?.id ?? '')"
       @close="showEmailModal = false"
     />
   </section>

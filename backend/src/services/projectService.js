@@ -389,12 +389,13 @@ async function joinProject(projectId, userId) {
 
   if (emailService.IS_CONFIGURED) {
     const { rows: userRows } = await require('../config/db').query(
-      'SELECT email, first_name, last_name FROM users WHERE id = $1',
+      'SELECT email, first_name, last_name, firebase_uid FROM users WHERE id = $1',
       [userId],
     )
     if (userRows.length > 0) {
       const u = userRows[0]
       emailService.sendParticipationConfirmation({
+        userId: u.firebase_uid || userId,
         email: u.email,
         userName: u.first_name,
         projectTitle: project.title,

@@ -55,35 +55,6 @@ async function getProjectParticipants(projectId) {
   }))
 }
 
-async function sendManualEmail(req, res, next) {
-  try {
-    if (!req.user || req.user.role !== 'admin') {
-      throw Object.assign(new Error('Admin access required.'), { status: 403 })
-    }
-
-    const { subject, message, errors } = validateSendInput(req.body)
-    if (Object.keys(errors).length > 0) {
-      throw badRequest('Validation failed', errors)
-    }
-
-    const attachments = (req.files || []).map(buildAttachment)
-    for (const file of (req.files || [])) {
-      emailService.validateAttachment(file)
-    }
-
-    await emailService.sendBulkEmail({
-      recipients: req.body.recipients,
-      subject,
-      text: message,
-      attachments,
-    })
-
-    res.json({ data: { success: true, recipientCount: req.body.recipients.length } })
-  } catch (error) {
-    next(error)
-  }
-}
-
 async function sendProjectEmail(req, res, next) {
   try {
     if (!req.user) {
@@ -129,10 +100,11 @@ async function sendProjectEmail(req, res, next) {
       throw badRequest('No valid recipients found for this project.')
     }
 
-    await emailService.sendBulkEmail({
+    await emailService.sendProjectEmail({
+      projectId,
       recipients,
       subject,
-      text: message,
+      message,
       attachments,
     })
 
@@ -174,7 +146,6 @@ async function getProjectParticipantsEndpoint(req, res, next) {
 }
 
 module.exports = {
-  sendManualEmail,
   sendProjectEmail,
   getProjectParticipantsEndpoint,
 }

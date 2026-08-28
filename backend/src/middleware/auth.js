@@ -15,6 +15,13 @@ function initFirebase() {
   firebaseReady = true
 }
 
+async function setFirebaseRoleClaim(firebaseUid, role) {
+  if (!firebaseUid || !role) return
+  if (!firebaseReady) initFirebase()
+  if (!firebaseReady) return
+  await admin.auth().setCustomUserClaims(firebaseUid, { role })
+}
+
 async function attachUser(req, res, next) {
   try {
     if (!firebaseReady) initFirebase()
@@ -26,7 +33,12 @@ async function attachUser(req, res, next) {
         const decoded = await admin.auth().verifyIdToken(token)
         req.firebaseUid = decoded.uid
         req.firebaseEmail = decoded.email ?? null
+        req.firebaseToken = decoded
         req.user = await userModel.findByFirebaseUid(decoded.uid)
+        if (req.user && decoded.role !== req.user.role) {
+          req.firebaseToken = { ...decoded, role: req.user.role }
+          setFirebaseRoleClaim(decoded.uid, req.user.role).catch(() => {})
+        }
       } catch {
         // Token invalid or expired — continue without user
       }
@@ -56,4 +68,4 @@ function requireRole(...roles) {
   }
 }
 
-module.exports = { attachUser, requireAuth, requireRole }
+module.exports = { attachUser, requireAuth, requireRole, setFirebaseRoleClaim }

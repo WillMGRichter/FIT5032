@@ -1,4 +1,5 @@
 const adminModel = require('../models/adminModel')
+const { setFirebaseRoleClaim } = require('../middleware/auth')
 
 function badRequest(message) {
   const error = new Error(message)
@@ -41,7 +42,11 @@ async function updateUserRole(id, role, currentUser) {
     }
   }
 
-  return adminModel.updateUserRole(targetId, role)
+  const updatedUser = await adminModel.updateUserRole(targetId, role)
+  if (target.firebaseUid && updatedUser) {
+    setFirebaseRoleClaim(target.firebaseUid, role).catch(() => {})
+  }
+  return updatedUser
 }
 
 async function deleteUser(id, currentUser) {

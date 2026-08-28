@@ -1,19 +1,11 @@
-const sgMail = require('@sendgrid/mail')
+const crypto = require('node:crypto')
 
-const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@greenlink.org'
-const IS_CONFIGURED = Boolean(process.env.SENDGRID_API_KEY)
+const FUNCTION_URL = process.env.EMAIL_FUNCTION_URL
+const HMAC_SECRET = process.env.EMAIL_HMAC_SECRET
+const IS_CONFIGURED = Boolean(FUNCTION_URL)
 
-if (IS_CONFIGURED) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY)
-}
-
-function assertConfigured() {
-  if (!IS_CONFIGURED) {
-    const error = new Error('Email service is not configured. Set SENDGRID_API_KEY in the environment.')
-    error.status = 503
-    throw error
-  }
-}
+const REQUEST_TIMEOUT_MS = 15000
+const SIGNATURE_TTL_SECONDS = 120
 
 const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024
 const ALLOWED_MIME_TYPES = [
@@ -30,14 +22,70 @@ const ALLOWED_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ]
 
+function serviceError(status, message, code = null, details = null) {
+  const error = new Error(message)
+  error.status = status
+  if (code) error.code = code
+  if (details) error.details = details
+  return error
+}
+
+function assertConfigured() {
+  if (!IS_CONFIGURED) {
+    throw serviceError(503, 'Email service is not configured. Set EMAIL_FUNCTION_URL in the environment.')
+  }
+  if (!HMAC_SECRET) {
+    throw serviceError(503, 'Email signing secret is not configured. Set EMAIL_HMAC_SECRET in the environment.')
+  }
+}
+
+function canonicalCore(payload) {
+  if (payload.kind === 'confirmation') {
+    const to = payload.to || {}
+    const user = payload.user || {}
+    const project = payload.project || {}
+    return {
+      kind: 'confirmation',
+      to: { uid: to.uid ?? null, email: to.email ?? null },
+      user: { name: user.name ?? null },
+      project: {
+        title: project.title ?? null,
+        location: project.location ?? null,
+        startDate: project.startDate ?? null,
+      },
+      exp: payload.exp ?? null,
+    }
+  }
+  return {
+    kind: payload.kind ?? null,
+    projectId: payload.projectId ?? null,
+    recipients: (payload.recipients || [])
+      .map((recipient) => (recipient && recipient.email ? String(recipient.email).trim().toLowerCase() : ''))
+      .filter(Boolean)
+      .sort(),
+    subject: payload.subject ?? '',
+    message: payload.message ?? '',
+    exp: payload.exp ?? null,
+  }
+}
+
+function canonicalBody(payload) {
+  return JSON.stringify(canonicalCore(payload))
+}
+
+function sign(secret, payload) {
+  if (!secret) throw serviceError(503, 'Email signing secret is not configured.')
+  return crypto.createHmac('sha256', secret).update(canonicalBody(payload)).digest('base64')
+}
+
 function validateAttachment(file) {
   if (file.size > ATTACHMENT_MAX_BYTES) {
-    throw Object.assign(new Error('Attachment must be 10 MB or smaller.'), { status: 400 })
+    throw serviceError(400, 'Attachment must be 10 MB or smaller.')
   }
   if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-    throw Object.assign(
-      new Error('Attachment type is not allowed. Accepted: PDF, images, Word, Excel, CSV, plain text.'),
-      { status: 400 },
+    throw serviceError(
+      400,
+      'Attachment type is not allowed. Accepted: PDF, images, Word, Excel, CSV, plain text.',
     )
   }
 }
@@ -47,82 +95,70 @@ function buildAttachment(file) {
     content: file.buffer.toString('base64'),
     filename: file.originalname,
     type: file.mimetype,
-    disposition: 'attachment',
   }
 }
 
-function buildConfirmationEmail({ userName, projectTitle, projectLocation, startDate }) {
-  return {
-    subject: `You're confirmed for "${projectTitle}"`,
-    text: [
-      `Hi ${userName},`,
-      '',
-      `You've been confirmed as a volunteer for "${projectTitle}" at ${projectLocation}.`,
-      startDate ? `The project starts on ${startDate}.` : '',
-      '',
-      'Thank you for contributing to urban greening in Melbourne!',
-      '',
-      '— GreenLink Team',
-    ]
-      .filter(Boolean)
-      .join('\n'),
-    html: [
-      `<p>Hi ${userName},</p>`,
-      `<p>You've been confirmed as a volunteer for <strong>"${projectTitle}"</strong> at ${projectLocation}.`,
-      startDate ? `The project starts on <strong>${startDate}</strong>.` : '',
-      '</p>',
-      '<p>Thank you for contributing to urban greening in Melbourne!</p>',
-      '<p>— GreenLink Team</p>',
-    ]
-      .filter(Boolean)
-      .join('\n'),
-  }
-}
-
-async function sendEmail({ to, subject, text, html, attachments = [] }) {
+async function callEmailFunction(payload) {
   assertConfigured()
 
-  const msg = {
-    to,
-    from: FROM_EMAIL,
-    subject,
-    text,
-    html: html || text,
+  const exp = Math.floor(Date.now() / 1000) + SIGNATURE_TTL_SECONDS
+  const requestBody = {
+    ...payload,
+    exp,
+    signature: sign(HMAC_SECRET, { ...payload, exp }),
   }
 
-  if (attachments.length > 0) {
-    msg.attachments = attachments
-  }
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
-  await sgMail.send(msg)
+  try {
+    const response = await fetch(FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    })
+
+    const data = await response.json().catch(() => null)
+
+    if (!response.ok) {
+      const message = data?.error || `The email service responded with status ${response.status}.`
+      throw serviceError(response.status, message, data?.code, data?.errors)
+    }
+
+    return data
+  } catch (error) {
+    if (error.status) throw error
+    if (error.name === 'AbortError') {
+      throw serviceError(504, 'The email service took too long to respond.')
+    }
+    throw serviceError(502, 'Unable to reach the email service.')
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
-async function sendBulkEmail({ recipients, subject, text, html, attachments = [] }) {
-  assertConfigured()
-
-  if (!Array.isArray(recipients) || recipients.length === 0) {
-    throw Object.assign(new Error('At least one recipient is required.'), { status: 400 })
-  }
-
-  const messages = recipients.map((recipient) => ({
-    to: recipient.email,
-    from: FROM_EMAIL,
+async function sendProjectEmail({ projectId, recipients, subject, message, attachments = [] }) {
+  return callEmailFunction({
+    kind: 'project',
+    projectId,
+    recipients,
     subject,
-    text,
-    html: html || text,
-    attachments: attachments.length > 0 ? attachments : undefined,
-  }))
-
-  await sgMail.send(messages)
+    message,
+    attachments,
+  })
 }
 
-async function sendParticipationConfirmation({ email, userName, projectTitle, projectLocation, startDate }) {
-  const confirmation = buildConfirmationEmail({ userName, projectTitle, projectLocation, startDate })
-  await sendEmail({
-    to: email,
-    subject: confirmation.subject,
-    text: confirmation.text,
-    html: confirmation.html,
+async function sendParticipationConfirmation({ userId, email, userName, projectTitle, projectLocation, startDate }) {
+  return callEmailFunction({
+    kind: 'confirmation',
+    to: { uid: String(userId), email },
+    user: { name: userName },
+    project: {
+      title: projectTitle,
+      location: projectLocation,
+      startDate: startDate ?? null,
+    },
   })
 }
 
@@ -130,10 +166,11 @@ module.exports = {
   IS_CONFIGURED,
   ATTACHMENT_MAX_BYTES,
   ALLOWED_MIME_TYPES,
+  canonicalBody,
+  sign,
   validateAttachment,
   buildAttachment,
-  buildConfirmationEmail,
-  sendEmail,
-  sendBulkEmail,
+  sendProjectEmail,
   sendParticipationConfirmation,
+  callEmailFunction,
 }
