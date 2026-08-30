@@ -16,6 +16,7 @@
     "@primeuix/themes": "^3.0.0",
     "@primevue/themes": "^4.5.4",
     "bootstrap": "^5.3.8",
+    "firebase": "^12.18.0",
     "primevue": "^5.0.1",
     "vue": "^3.5.40"
   },
