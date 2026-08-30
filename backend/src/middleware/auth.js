@@ -1,4 +1,6 @@
-const admin = require('firebase-admin')
+const path = require('path')
+const { initializeApp, cert } = require('firebase-admin/app')
+const { getAuth } = require('firebase-admin/auth')
 const userModel = require('../models/userModel')
 
 let firebaseReady = false
@@ -10,8 +12,8 @@ function initFirebase() {
     console.warn('FIREBASE_SERVICE_ACCOUNT not set — Firebase token verification disabled')
     return
   }
-  const serviceAccount = require(serviceAccountPath)
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) })
+  const serviceAccount = require(path.resolve(serviceAccountPath))
+  initializeApp({ credential: cert(serviceAccount) })
   firebaseReady = true
 }
 
@@ -19,7 +21,7 @@ async function setFirebaseRoleClaim(firebaseUid, role) {
   if (!firebaseUid || !role) return
   if (!firebaseReady) initFirebase()
   if (!firebaseReady) return
-  await admin.auth().setCustomUserClaims(firebaseUid, { role })
+  await getAuth().setCustomUserClaims(firebaseUid, { role })
 }
 
 async function attachUser(req, res, next) {
@@ -30,7 +32,7 @@ async function attachUser(req, res, next) {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.slice(7)
       try {
-        const decoded = await admin.auth().verifyIdToken(token)
+        const decoded = await getAuth().verifyIdToken(token)
         req.firebaseUid = decoded.uid
         req.firebaseEmail = decoded.email ?? null
         req.firebaseToken = decoded
