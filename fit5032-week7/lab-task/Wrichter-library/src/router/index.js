@@ -33,6 +33,11 @@ const routes = [
     name: 'FireLogin',
     component: FirebaseSigninView
   },
+  {
+    path: '/FireRegister',
+    name: 'FireRegister',
+    component: FirebaseRegisterView
+  },
 ]
 
 const router = createRouter({
