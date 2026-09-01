@@ -614,7 +614,7 @@ const spotsRemaining = computed(() =>
   font-weight: var(--font-weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--color-text-light);
+  color: var(--color-text-secondary);
 }
 
 .details__meta dd {

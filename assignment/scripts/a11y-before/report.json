@@ -1,0 +1,23 @@
+{
+  "home": {
+    "violations": []
+  },
+  "discover": {
+    "violations": []
+  },
+  "project-details": {
+    "violations": []
+  },
+  "plants": {
+    "violations": []
+  },
+  "about": {
+    "violations": []
+  },
+  "login": {
+    "violations": []
+  },
+  "register": {
+    "violations": []
+  }
+}

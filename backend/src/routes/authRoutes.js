@@ -4,7 +4,7 @@ const { requireAuth } = require('../middleware/auth')
 
 const router = express.Router()
 
-router.post('/sync', requireAuth, authController.syncUser)
+router.post('/sync', authController.syncUser)
 router.get('/me', requireAuth, authController.me)
 router.get('/profile', requireAuth, authController.getProfile)
 router.put('/profile', requireAuth, authController.updateProfile)

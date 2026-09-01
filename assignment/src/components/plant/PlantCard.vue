@@ -41,11 +41,11 @@ function onImageError() {
     </div>
 
     <div class="plant-card__body">
-      <h3 class="plant-card__name">
+      <h2 class="plant-card__name">
         <RouterLink :to="{ name: 'plant-details', params: { id: plant.id } }">
           {{ plant.commonName }}
         </RouterLink>
-      </h3>
+      </h2>
       <p class="plant-card__scientific">{{ plant.scientificName }}</p>
       <p class="plant-card__description">{{ plant.description }}</p>
     </div>

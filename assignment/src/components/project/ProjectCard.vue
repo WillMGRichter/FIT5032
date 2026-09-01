@@ -80,11 +80,11 @@ function onSelect() {
 
     <div class="project-card__body">
       <p class="project-card__category">{{ project.category?.name }}</p>
-      <h3 class="project-card__title">
+      <h2 class="project-card__title">
         <RouterLink :to="{ name: 'project-details', params: { id: project.id } }">
           {{ project.title }}
         </RouterLink>
-      </h3>
+      </h2>
       <p class="project-card__location">{{ project.location }}</p>
       <p class="project-card__description">{{ project.description }}</p>
       <p v-if="ratingDisplay" class="project-card__rating">
