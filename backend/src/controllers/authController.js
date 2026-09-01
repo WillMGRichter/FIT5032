@@ -12,6 +12,11 @@ async function syncUser(req, res, next) {
 
 async function me(req, res, next) {
   try {
+    if (req.firebaseUid && !req.user) {
+      const user = await authService.ensureUserFromToken(req.firebaseUid, req.firebaseEmail)
+      res.json({ data: { user } })
+      return
+    }
     res.json({ data: { user: req.user ?? null } })
   } catch (error) {
     next(error)

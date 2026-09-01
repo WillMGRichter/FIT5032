@@ -100,8 +100,22 @@ function validateProfileInput(input) {
   }
 }
 
-async function updateUserProfile(userId, input) {
-  if (typeof input !== 'object' || input === null) {
+async function ensureUserFromToken(firebaseUid, firebaseEmail) {
+  let user = await userModel.findByFirebaseUid(firebaseUid)
+  if (!user) {
+    const email = firebaseEmail
+    if (!email) {
+      throw badRequest('Email is required for new accounts.')
+    }
+    const firstName = (firebaseEmail ?? '').split('@')[0] || 'GreenLink'
+    const lastName = 'User'
+    user = await userModel.createWithFirebase({ firebaseUid, email, firstName, lastName })
+  }
+  setFirebaseRoleClaim(firebaseUid, user.role).catch(() => {})
+  return user
+}
+
+async function updateUserProfile(userId, input) {  if (typeof input !== 'object' || input === null) {
     throw badRequest('Request body must be a JSON object')
   }
 
@@ -121,4 +135,4 @@ async function updateUserProfile(userId, input) {
   return userModel.update(userId, values)
 }
 
-module.exports = { syncUser, updateUserProfile }
+module.exports = { syncUser, ensureUserFromToken, updateUserProfile }
