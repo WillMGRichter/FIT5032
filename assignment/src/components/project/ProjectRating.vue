@@ -146,6 +146,37 @@ function setScore(score) {
   formErrors.value.score = ''
 }
 
+function handleStarKeydown(event, star) {
+  const starCount = 5
+  let next
+  switch (event.key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+      next = star < starCount ? star + 1 : 1
+      break
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      next = star > 1 ? star - 1 : starCount
+      break
+    case 'Home':
+      next = 1
+      break
+    case 'End':
+      next = starCount
+      break
+    default:
+      return
+  }
+  event.preventDefault()
+  setScore(next)
+  focusStar(next)
+}
+
+function focusStar(star) {
+  const el = document.querySelector(`.project-rating__star-btn[data-star="${star}"]`)
+  el?.focus()
+}
+
 watch(
   () => props.projectId,
   () => loadRatings(),
@@ -176,6 +207,7 @@ watch(
           <span
             v-for="star in 5"
             :key="star"
+            aria-hidden="true"
             class="project-rating__star-display"
             :class="{
               'project-rating__star-display--filled': star <= Math.round(aggregate.averageScore),
@@ -190,7 +222,7 @@ watch(
 
         <div v-if="aggregate.ratingCount > 0" class="project-rating__breakdown">
           <div v-for="star in [5, 4, 3, 2, 1]" :key="star" class="project-rating__bar-row">
-            <span class="project-rating__bar-label">{{ star }}&#9733;</span>
+            <span class="project-rating__bar-label">{{ star }}<span aria-hidden="true">&#9733;</span></span>
             <div class="project-rating__bar-track">
               <div
                 class="project-rating__bar-fill"
@@ -212,12 +244,19 @@ watch(
       <form v-else class="project-rating__form" novalidate @submit.prevent="handleSubmit">
         <h3>{{ isEditing ? 'Update your rating' : 'Rate this project' }}</h3>
 
-        <div class="project-rating__star-select" role="radiogroup" aria-label="Rating score">
+        <div
+          class="project-rating__star-select"
+          role="radiogroup"
+          aria-label="Rating score"
+          :aria-describedby="formErrors.score ? 'rating-score-error' : undefined"
+        >
           <button
             v-for="star in 5"
             :key="star"
+            :data-star="star"
             type="button"
             role="radio"
+            :tabindex="formScore === star ? 0 : -1"
             :aria-checked="formScore === star"
             :aria-label="`${star} star${star === 1 ? '' : 's'}`"
             class="project-rating__star-btn"
@@ -225,6 +264,7 @@ watch(
               'project-rating__star-btn--filled': star <= (hoverScore || formScore),
             }"
             @click="setScore(star)"
+            @keydown="handleStarKeydown($event, star)"
             @mouseenter="hoverScore = star"
             @mouseleave="hoverScore = 0"
             @focus="hoverScore = star"
@@ -233,7 +273,7 @@ watch(
             &#9733;
           </button>
         </div>
-        <FormError :message="formErrors.score" />
+        <FormError id="rating-score-error" :message="formErrors.score" />
 
         <div class="project-rating__field">
           <label for="rating-comment" class="project-rating__label">
@@ -288,10 +328,11 @@ watch(
           <li v-for="rating in ratings" :key="rating.id" class="project-rating__item">
             <div class="project-rating__item-header">
               <span class="project-rating__item-name">{{ rating.userName }}</span>
-              <span class="project-rating__item-stars">
+              <span class="project-rating__item-stars" :aria-label="`${rating.score} out of 5 stars`">
                 <span
                   v-for="s in 5"
                   :key="s"
+                  aria-hidden="true"
                   class="project-rating__star-display"
                   :class="{ 'project-rating__star-display--filled': s <= rating.score }"
                   >&#9733;</span

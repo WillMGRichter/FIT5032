@@ -196,17 +196,20 @@ onMounted(loadPage)
           type="button"
           class="discover__page-btn"
           :disabled="currentPage <= 1"
+          aria-label="Previous page"
           @click="currentPage--"
         >
           &laquo; Prev
         </button>
         <template v-for="(page, idx) in pageNumbers" :key="idx">
-          <span v-if="page === '...'" class="discover__page-ellipsis">&hellip;</span>
+          <span v-if="page === '...'" class="discover__page-ellipsis" aria-hidden="true">&hellip;</span>
           <button
             v-else
             type="button"
             class="discover__page-btn"
             :class="{ 'discover__page-btn--active': page === currentPage }"
+            :aria-current="page === currentPage ? 'page' : undefined"
+            :aria-label="`Page ${page}`"
             @click="currentPage = page"
           >
             {{ page }}
@@ -216,6 +219,7 @@ onMounted(loadPage)
           type="button"
           class="discover__page-btn"
           :disabled="currentPage >= totalPages"
+          aria-label="Next page"
           @click="currentPage++"
         >
           Next &raquo;

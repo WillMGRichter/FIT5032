@@ -169,6 +169,7 @@ onMounted(() => {
         :columns="columns"
         row-key="id"
         empty-message="No users match your search."
+        caption="Registered users"
       >
         <template #cell-_actions="{ row }">
           <div class="admin-users__actions">

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormTextarea from '@/components/forms/FormTextarea.vue'
 import FormError from '@/components/forms/FormError.vue'
@@ -30,6 +30,9 @@ const ALLOWED_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.
 
 const recipientCount = computed(() => props.recipients.length)
 
+const modalRoot = ref(null)
+let previouslyFocused = null
+
 const canSend = computed(
   () => subject.value.trim() && message.value.trim() && recipientCount.value > 0 && !isSending.value,
 )
@@ -39,9 +42,53 @@ watch(
   (open) => {
     if (open) {
       resetForm()
+      previouslyFocused = document.activeElement
+      nextTick(() => {
+        const firstField = modalRoot.value?.querySelector(
+          'input, textarea, select, button, [tabindex]',
+        )
+        ;(firstField || modalRoot.value)?.focus()
+      })
+    } else {
+      if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+        previouslyFocused.focus()
+      }
+      previouslyFocused = null
     }
   },
 )
+
+function handleKeydown(event) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    handleClose()
+    return
+  }
+  if (event.key !== 'Tab' || !modalRoot.value) return
+
+  const focusable = Array.from(
+    modalRoot.value.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])'),
+  ).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null)
+
+  if (focusable.length === 0) return
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+onBeforeUnmount(() => {
+  if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+    previouslyFocused.focus()
+  }
+})
 
 function resetForm() {
   subject.value = props.projectTitle ? `Update for "${props.projectTitle}"` : ''
@@ -139,7 +186,14 @@ async function handleSend() {
 <template>
   <Teleport to="body">
     <div v-if="visible" class="modal-overlay" @click.self="handleClose">
-      <div class="modal" role="dialog" aria-labelledby="email-modal-title">
+      <div
+        ref="modalRoot"
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="email-modal-title"
+        @keydown="handleKeydown"
+      >
         <header class="modal__header">
           <h2 id="email-modal-title">Send Email</h2>
           <button type="button" class="modal__close" aria-label="Close" @click="handleClose">
@@ -183,27 +237,34 @@ async function handleSend() {
             />
 
             <div class="modal__attachment">
-              <label class="modal__attachment-label">
+              <span id="email-attachment-label" class="modal__attachment-label">
                 Attachment (optional, max 10 MB)
-              </label>
+              </span>
               <div v-if="attachmentName" class="modal__attachment-file">
                 <span class="modal__attachment-name">{{ attachmentName }}</span>
                 <span class="modal__attachment-size">{{ formatFileSize(attachment.value?.size || 0) }}</span>
-                <button type="button" class="modal__attachment-remove" @click="removeAttachment">
+                <button
+                  type="button"
+                  class="modal__attachment-remove"
+                  aria-label="Remove attachment"
+                  @click="removeAttachment"
+                >
                   <AppIcon name="trash" :size="16" />
                 </button>
               </div>
-              <label v-else class="modal__attachment-drop">
+              <label v-else class="modal__attachment-drop" :for="'email-attachment-input'">
                 <AppIcon name="feather" :size="20" />
                 <span>Choose a file to attach</span>
                 <input
+                  id="email-attachment-input"
                   type="file"
                   class="modal__attachment-input"
                   :accept="ALLOWED_EXTENSIONS.join(',')"
+                  :aria-describedby="errors.attachment ? 'email-attachment-error' : undefined"
                   @change="handleAttachmentChange"
                 />
               </label>
-              <FormError :message="errors.attachment" />
+              <FormError id="email-attachment-error" :message="errors.attachment" />
             </div>
 
             <div v-if="sendError" role="alert" class="modal__error">
@@ -254,7 +315,7 @@ async function handleSend() {
   flex-direction: column;
   border-radius: var(--radius-lg);
   background-color: var(--color-surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
 }
 

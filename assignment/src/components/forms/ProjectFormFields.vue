@@ -152,6 +152,7 @@ function set(field, value) {
     <legend>Native plants</legend>
     <FormCheckboxGroup
       v-if="plants.length > 0"
+      :id="`${idPrefix}-plants`"
       name="plantIds"
       label="Select the native species this project will plant (optional)"
       :options="

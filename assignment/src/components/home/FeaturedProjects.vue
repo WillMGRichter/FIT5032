@@ -35,6 +35,7 @@ onMounted(async () => {
     <SectionHeader
       eyebrow="Get involved"
       title="Featured projects"
+      title-id="featured-title"
       intro="A snapshot of what's happening right now across Melbourne's suburbs."
     />
 

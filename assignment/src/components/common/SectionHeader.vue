@@ -2,6 +2,7 @@
 defineProps({
   eyebrow: { type: String, default: '' },
   title: { type: String, required: true },
+  titleId: { type: String, default: '' },
   intro: { type: String, default: '' },
   centered: { type: Boolean, default: false },
 })
@@ -10,7 +11,7 @@ defineProps({
 <template>
   <header class="section-header" :class="{ 'section-header--centered': centered }">
     <p v-if="eyebrow" class="section-header__eyebrow">{{ eyebrow }}</p>
-    <h2 class="section-header__title">{{ title }}</h2>
+    <h2 :id="titleId || undefined" class="section-header__title">{{ title }}</h2>
     <p v-if="intro" class="section-header__intro">{{ intro }}</p>
   </header>
 </template>

@@ -7,14 +7,12 @@ const props = defineProps({
   rowKey: { type: String, default: 'id' },
   pageSize: { type: Number, default: 10 },
   emptyMessage: { type: String, default: 'No records found.' },
+  caption: { type: String, default: '' },
 })
-
-const emit = defineEmits(['action'])
 
 const globalSearch = ref('')
 const sortKey = ref('')
 const sortDirection = ref('asc')
-const columnFilters = ref({})
 const currentPage = ref(1)
 
 const filterInputs = ref({})
@@ -167,11 +165,6 @@ function goToPage(page) {
   }
 }
 
-function handleAction(action, row) {
-  emit('action', { action, row })
-}
-
-const sortableColumns = computed(() => props.columns.filter((c) => c.sortable !== false))
 </script>
 
 <template>
@@ -191,7 +184,8 @@ const sortableColumns = computed(() => props.columns.filter((c) => c.sortable !=
     </div>
 
     <div class="data-table__wrapper">
-      <table class="data-table__table" role="grid">
+      <table class="data-table__table">
+        <caption v-if="caption" class="sr-only">{{ caption }}</caption>
         <thead class="data-table__head">
           <tr>
             <th
@@ -212,25 +206,40 @@ const sortableColumns = computed(() => props.columns.filter((c) => c.sortable !=
                     : 'descending'
                   : 'none'
               "
-              @click="col.sortable !== false ? toggleSort(col.key) : null"
             >
-              <div class="data-table__th-content">
-                <span>{{ col.label }}</span>
-                <span
-                  v-if="col.sortable !== false && sortKey === col.key"
-                  class="data-table__sort-icon"
-                  aria-hidden="true"
+              <template v-if="col.sortable !== false">
+                <button
+                  type="button"
+                  class="data-table__th-button"
+                  :aria-label="`Sort by ${col.label}${
+                    sortKey === col.key
+                      ? sortDirection === 'asc'
+                        ? ', ascending'
+                        : ', descending'
+                      : ''
+                  }`"
+                  @click="toggleSort(col.key)"
                 >
-                  {{ sortDirection === 'asc' ? '\u25B2' : '\u25BC' }}
-                </span>
-                <span
-                  v-else-if="col.sortable !== false"
-                  class="data-table__sort-icon data-table__sort-icon--idle"
-                  aria-hidden="true"
-                >
-                  &#8693;
-                </span>
-              </div>
+                  <span class="data-table__th-content">
+                    <span>{{ col.label }}</span>
+                    <span v-if="sortKey === col.key" class="data-table__sort-icon" aria-hidden="true">
+                      {{ sortDirection === 'asc' ? '\u25B2' : '\u25BC' }}
+                    </span>
+                    <span
+                      v-else
+                      class="data-table__sort-icon data-table__sort-icon--idle"
+                      aria-hidden="true"
+                    >
+                      &#8693;
+                    </span>
+                  </span>
+                </button>
+              </template>
+              <template v-else>
+                <div class="data-table__th-content">
+                  <span>{{ col.label }}</span>
+                </div>
+              </template>
             </th>
           </tr>
           <tr class="data-table__filter-row">
@@ -400,12 +409,12 @@ const sortableColumns = computed(() => props.columns.filter((c) => c.sortable !=
   user-select: none;
 }
 
-.data-table__th--sortable {
-  cursor: pointer;
-}
-
 .data-table__th--sortable:hover {
   background-color: var(--color-border);
+}
+
+.data-table__th--sortable {
+  cursor: default;
 }
 
 .data-table__th--sorted {
@@ -416,6 +425,25 @@ const sortableColumns = computed(() => props.columns.filter((c) => c.sortable !=
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
+}
+
+.data-table__th-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.data-table__th--sortable:hover .data-table__th-button {
+  color: var(--color-primary-dark);
 }
 
 .data-table__sort-icon {
