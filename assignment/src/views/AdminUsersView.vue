@@ -170,6 +170,8 @@ onMounted(() => {
         row-key="id"
         empty-message="No users match your search."
         caption="Registered users"
+        export-base-name="greenlink-users"
+        export-title="GreenLink Registered Users"
       >
         <template #cell-_actions="{ row }">
           <div class="admin-users__actions">

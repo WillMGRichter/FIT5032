@@ -175,6 +175,8 @@ onMounted(() => {
         row-key="id"
         empty-message="No projects match your search."
         caption="All projects"
+        export-base-name="greenlink-projects"
+        export-title="GreenLink Projects"
       >
         <template #cell-title="{ row }">
           <RouterLink

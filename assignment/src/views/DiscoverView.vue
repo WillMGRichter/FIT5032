@@ -5,6 +5,7 @@ import ProjectMap from '@/components/common/ProjectMap.vue'
 import { getProjects } from '@/services/projectService'
 import { getCategories } from '@/services/categoryService'
 import { useProjectFilters, SORT_OPTIONS } from '@/composables/useProjectFilters'
+import { exportCSV, exportPDF, dateStamp } from '@/services/exportService'
 
 const projects = ref([])
 const categories = ref([])
@@ -12,6 +13,72 @@ const isLoading = ref(true)
 const error = ref(null)
 const selectedProjectId = ref(null)
 const showMap = ref(false)
+
+const exportBusy = ref(false)
+const exportMessage = ref('')
+
+const exportColumns = [
+  { key: 'title', label: 'Project' },
+  { key: 'category.name', label: 'Category' },
+  { key: 'location', label: 'Location' },
+  { key: 'status', label: 'Status' },
+  {
+    key: 'volunteerCount',
+    label: 'Participants',
+    format: (val) => (val != null ? String(val) : '0'),
+  },
+  {
+    key: 'avgRating',
+    label: 'Rating',
+    format: (val) => {
+      if (val === 0 || val == null) return 'No ratings'
+      return `${Number(val).toFixed(1)} / 5`
+    },
+  },
+  {
+    key: 'startDate',
+    label: 'Start Date',
+    format: (val) => (val ? new Date(val).toLocaleDateString('en-AU') : ''),
+  },
+]
+
+async function handleExportCsv() {
+  if (exportBusy.value || sortedProjects.value.length === 0) return
+  exportBusy.value = true
+  exportMessage.value = ''
+  try {
+    await exportCSV({
+      filename: `greenlink-projects-${dateStamp()}.csv`,
+      columns: exportColumns,
+      rows: sortedProjects.value,
+    })
+    exportMessage.value = `Exported ${sortedProjects.value.length} project${sortedProjects.value.length === 1 ? '' : 's'} to CSV.`
+  } catch {
+    exportMessage.value = 'Could not export CSV.'
+  } finally {
+    exportBusy.value = false
+  }
+}
+
+async function handleExportPdf() {
+  if (exportBusy.value || sortedProjects.value.length === 0) return
+  exportBusy.value = true
+  exportMessage.value = ''
+  try {
+    await exportPDF({
+      filename: `greenlink-projects-${dateStamp()}.pdf`,
+      title: 'GreenLink Projects',
+      subtitle: `Generated ${new Date().toLocaleDateString('en-AU')} \u2022 ${sortedProjects.value.length} project${sortedProjects.value.length === 1 ? '' : 's'}`,
+      columns: exportColumns,
+      rows: sortedProjects.value,
+    })
+    exportMessage.value = `Exported ${sortedProjects.value.length} project${sortedProjects.value.length === 1 ? '' : 's'} to PDF.`
+  } catch {
+    exportMessage.value = 'Could not export PDF.'
+  } finally {
+    exportBusy.value = false
+  }
+}
 
 const {
   searchQuery,
@@ -145,15 +212,44 @@ onMounted(loadPage)
             ({{ projects.length }} total)
           </template>
         </p>
-        <button
-          type="button"
-          class="discover__map-toggle"
-          :class="{ 'discover__map-toggle--active': showMap }"
-          @click="showMap = !showMap"
-        >
-          {{ showMap ? 'Hide map' : 'Show map' }}
-        </button>
+        <div class="discover__results-actions">
+          <div class="discover__export" aria-label="Export projects">
+            <button
+              type="button"
+              class="discover__export-btn"
+              :disabled="exportBusy || sortedProjects.length === 0"
+              @click="handleExportCsv"
+            >
+              {{ exportBusy ? 'Working\u2026' : 'Export CSV' }}
+            </button>
+            <button
+              type="button"
+              class="discover__export-btn discover__export-btn--pdf"
+              :disabled="exportBusy || sortedProjects.length === 0"
+              @click="handleExportPdf"
+            >
+              {{ exportBusy ? 'Working\u2026' : 'Export PDF' }}
+            </button>
+          </div>
+          <button
+            type="button"
+            class="discover__map-toggle"
+            :class="{ 'discover__map-toggle--active': showMap }"
+            @click="showMap = !showMap"
+          >
+            {{ showMap ? 'Hide map' : 'Show map' }}
+          </button>
+        </div>
       </div>
+
+      <p
+        v-if="exportMessage"
+        role="status"
+        class="discover__export-message"
+        :class="{ 'discover__export-message--error': exportMessage.startsWith('Could not') }"
+      >
+        {{ exportMessage }}
+      </p>
 
       <section v-show="showMap" class="discover__map" aria-labelledby="discover-map-heading">
         <h2 id="discover-map-heading" class="sr-only">Explore on the map</h2>
@@ -289,6 +385,60 @@ onMounted(loadPage)
   margin: 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+}
+
+.discover__results-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.discover__export {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.discover__export-btn {
+  min-height: 40px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.discover__export-btn--pdf {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.discover__export-btn:hover:not(:disabled) {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.discover__export-btn--pdf:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.discover__export-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.discover__export-message {
+  margin-block-end: var(--spacing-md);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.discover__export-message--error {
+  color: var(--color-error);
 }
 
 .discover__map-toggle {
