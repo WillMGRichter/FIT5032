@@ -7,14 +7,35 @@ let firebaseReady = false
 
 function initFirebase() {
   if (firebaseReady) return
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
   const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT
-  if (!serviceAccountPath) {
-    console.warn('FIREBASE_SERVICE_ACCOUNT not set — Firebase token verification disabled')
+
+  let serviceAccount
+  if (serviceAccountJson) {
+    try {
+      serviceAccount = JSON.parse(serviceAccountJson)
+    } catch {
+      console.warn('FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON — Firebase token verification disabled')
+      return
+    }
+  } else if (serviceAccountPath) {
+    try {
+      serviceAccount = require(path.resolve(serviceAccountPath))
+    } catch {
+      console.warn('FIREBASE_SERVICE_ACCOUNT file could not be loaded — Firebase token verification disabled')
+      return
+    }
+  } else {
+    console.warn('FIREBASE_SERVICE_ACCOUNT or FIREBASE_SERVICE_ACCOUNT_JSON not set — Firebase token verification disabled')
     return
   }
-  const serviceAccount = require(path.resolve(serviceAccountPath))
-  initializeApp({ credential: cert(serviceAccount) })
-  firebaseReady = true
+
+  try {
+    initializeApp({ credential: cert(serviceAccount) })
+    firebaseReady = true
+  } catch {
+    console.warn('Firebase app could not be initialized from the service account credential')
+  }
 }
 
 async function setFirebaseRoleClaim(firebaseUid, role) {

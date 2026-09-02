@@ -17,8 +17,23 @@ const { attachUser } = require('./middleware/auth')
 const app = express()
 
 const clientOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+const allowedOrigins = clientOrigin
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
 
-app.use(cors({ origin: clientOrigin, credentials: true }))
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(null, false)
+      }
+    },
+    credentials: true,
+  }),
+)
 app.use(express.json())
 app.use(attachUser)
 

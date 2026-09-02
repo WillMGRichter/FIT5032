@@ -4,13 +4,20 @@ const path = require('node:path')
 const { Client } = require('pg')
 
 async function main() {
-  const client = new Client({
-    host: process.env.DB_HOST,
-    port: Number(process.env.DB_PORT),
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-  })
+  const client = new Client(
+    process.env.DATABASE_URL
+      ? {
+          connectionString: process.env.DATABASE_URL,
+          ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
+        }
+      : {
+          host: process.env.DB_HOST,
+          port: Number(process.env.DB_PORT),
+          database: process.env.DB_NAME,
+          user: process.env.DB_USER,
+          password: process.env.DB_PASSWORD,
+        },
+  )
 
   await client.connect()
 
