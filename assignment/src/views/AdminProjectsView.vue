@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePermissions } from '@/composables/usePermissions'
 import { getProjects, deleteProject } from '@/services/projectService'
@@ -174,6 +174,9 @@ onMounted(() => {
         :columns="columns"
         row-key="id"
         empty-message="No projects match your search."
+        caption="All projects"
+        export-base-name="greenlink-projects"
+        export-title="GreenLink Projects"
       >
         <template #cell-title="{ row }">
           <RouterLink

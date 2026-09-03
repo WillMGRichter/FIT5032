@@ -54,7 +54,7 @@ import BaseButton from '@/components/common/BaseButton.vue'
 }
 
 .hero__eyebrow {
-  color: var(--color-secondary);
+  color: var(--color-surface);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   text-transform: uppercase;

@@ -78,6 +78,7 @@ const values = [
       <SectionHeader
         eyebrow="The problem"
         title="Why Melbourne needs GreenLink"
+        title-id="problem-title"
         intro="Our city loves its green character, but the pressures on it are real and growing."
       />
       <div class="about__cards">
@@ -93,6 +94,7 @@ const values = [
       <SectionHeader
         eyebrow="Our purpose"
         title="What GreenLink sets out to do"
+        title-id="purpose-title"
         intro="We turn good intentions into trees in the ground by making participation simple, social and visible."
       />
       <div class="about__purpose">
@@ -133,6 +135,7 @@ const values = [
       <SectionHeader
         eyebrow="Who we are"
         title="Run by a not-for-profit, for the community"
+        title-id="organisation-title"
         intro="GreenLink Melbourne Ltd is a registered not-for-profit association run by a small team and a wide network of volunteers."
       />
       <div class="about__cards">

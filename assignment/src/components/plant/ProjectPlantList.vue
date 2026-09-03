@@ -10,7 +10,7 @@ defineProps({
 </script>
 
 <template>
-  <section class="project-plants" aria-labelledby="project-plants-title">
+  <section class="project-plants" :aria-labelledby="headingId">
     <h2 :id="headingId" class="project-plants__title">Native plants in this project</h2>
 
     <p v-if="isLoading" class="project-plants__state">Loading plants&hellip;</p>

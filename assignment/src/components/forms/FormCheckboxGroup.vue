@@ -2,6 +2,7 @@
 import FormError from './FormError.vue'
 
 const props = defineProps({
+  id: { type: String, default: '' },
   label: { type: String, required: true },
   options: { type: Array, default: () => [] },
   modelValue: { type: Array, default: () => [] },
@@ -11,6 +12,10 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue'])
+
+function errorId() {
+  return props.id ? `${props.id}-error` : undefined
+}
 
 function isSelected(value) {
   return props.modelValue.includes(value)
@@ -25,8 +30,13 @@ function toggle(value) {
 </script>
 
 <template>
-  <fieldset class="checkbox-group" :disabled="disabled">
-    <legend class="checkbox-group__label">
+  <fieldset
+    class="checkbox-group"
+    :disabled="disabled"
+    :aria-labelledby="id ? `${id}-label` : undefined"
+    :aria-describedby="error ? errorId() : undefined"
+  >
+    <legend :id="id ? `${id}-label` : undefined" class="checkbox-group__label">
       {{ label }}
     </legend>
     <div class="checkbox-group__options">
@@ -47,7 +57,7 @@ function toggle(value) {
         <span>{{ option.label }}</span>
       </label>
     </div>
-    <FormError :message="error" />
+    <FormError :id="errorId()" :message="error" />
   </fieldset>
 </template>
 

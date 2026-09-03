@@ -7,7 +7,11 @@ defineEmits(['read', 'delete'])
 </script>
 
 <template>
-  <div class="notification-item" :class="{ 'is-unread': !notification.isRead }">
+  <div
+    class="notification-item"
+    :class="{ 'is-unread': !notification.isRead }"
+    :aria-label="notification.isRead ? notification.title : `Unread: ${notification.title}`"
+  >
     <div class="notification-item__body">
       <p class="notification-item__title">{{ notification.title }}</p>
       <p class="notification-item__message">{{ notification.message }}</p>
@@ -18,24 +22,38 @@ defineEmits(['read', 'delete'])
         v-if="!notification.isRead"
         type="button"
         class="notification-item__btn"
-        title="Mark as read"
+        aria-label="Mark as read"
         @click="$emit('read', notification.id)"
       >
-        &#10003;
+        <span aria-hidden="true">&#10003;</span>
+        <span class="sr-only">Mark as read</span>
       </button>
       <button
         type="button"
         class="notification-item__btn notification-item__btn--delete"
-        title="Delete"
+        aria-label="Delete notification"
         @click="$emit('delete', notification.id)"
       >
-        &#10005;
+        <span aria-hidden="true">&#10005;</span>
+        <span class="sr-only">Delete notification</span>
       </button>
     </div>
   </div>
 </template>
 
 <style scoped>
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .notification-item {
   display: flex;
   justify-content: space-between;

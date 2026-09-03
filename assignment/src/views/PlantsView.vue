@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import PlantCard from '@/components/plant/PlantCard.vue'
 import { getPlants } from '@/services/plantService'
+import { exportCSV, exportPDF, dateStamp } from '@/services/exportService'
 
 const plants = ref([])
 const isLoading = ref(true)
@@ -11,6 +12,21 @@ const searchQuery = ref('')
 const selectedMaintenance = ref('')
 const selectedHabitat = ref('')
 const sortBy = ref('name')
+
+const exportBusy = ref(false)
+const exportMessage = ref('')
+
+const exportColumns = [
+  { key: 'commonName', label: 'Common Name' },
+  { key: 'scientificName', label: 'Scientific Name' },
+  { key: 'habitat', label: 'Habitat' },
+  { key: 'maintenanceLevel', label: 'Maintenance Level' },
+  {
+    key: 'description',
+    label: 'Description',
+    format: (val) => val ?? '',
+  },
+]
 
 const maintenanceOptions = [
   { value: 'low', label: 'Low maintenance' },
@@ -85,6 +101,44 @@ async function loadPage() {
   }
 }
 
+async function handleExportCsv() {
+  if (exportBusy.value || filteredPlants.value.length === 0) return
+  exportBusy.value = true
+  exportMessage.value = ''
+  try {
+    await exportCSV({
+      filename: `greenlink-plants-${dateStamp()}.csv`,
+      columns: exportColumns,
+      rows: filteredPlants.value,
+    })
+    exportMessage.value = `Exported ${filteredPlants.value.length} plant${filteredPlants.value.length === 1 ? '' : 's'} to CSV.`
+  } catch {
+    exportMessage.value = 'Could not export CSV.'
+  } finally {
+    exportBusy.value = false
+  }
+}
+
+async function handleExportPdf() {
+  if (exportBusy.value || filteredPlants.value.length === 0) return
+  exportBusy.value = true
+  exportMessage.value = ''
+  try {
+    await exportPDF({
+      filename: `greenlink-plants-${dateStamp()}.pdf`,
+      title: 'GreenLink Native Plants',
+      subtitle: `Generated ${new Date().toLocaleDateString('en-AU')} \u2022 ${filteredPlants.value.length} plant${filteredPlants.value.length === 1 ? '' : 's'}`,
+      columns: exportColumns,
+      rows: filteredPlants.value,
+    })
+    exportMessage.value = `Exported ${filteredPlants.value.length} plant${filteredPlants.value.length === 1 ? '' : 's'} to PDF.`
+  } catch {
+    exportMessage.value = 'Could not export PDF.'
+  } finally {
+    exportBusy.value = false
+  }
+}
+
 onMounted(loadPage)
 </script>
 
@@ -146,8 +200,37 @@ onMounted(loadPage)
         </button>
       </form>
 
-      <p class="plants__count" role="status">
-        Showing {{ filteredPlants.length }} of {{ plants.length }} plants
+      <div class="plants__results-bar">
+        <p class="plants__count" role="status">
+          Showing {{ filteredPlants.length }} of {{ plants.length }} plants
+        </p>
+        <div class="plants__export" aria-label="Export plants">
+          <button
+            type="button"
+            class="plants__export-btn"
+            :disabled="exportBusy || filteredPlants.length === 0"
+            @click="handleExportCsv"
+          >
+            {{ exportBusy ? 'Working\u2026' : 'Export CSV' }}
+          </button>
+          <button
+            type="button"
+            class="plants__export-btn plants__export-btn--pdf"
+            :disabled="exportBusy || filteredPlants.length === 0"
+            @click="handleExportPdf"
+          >
+            {{ exportBusy ? 'Working\u2026' : 'Export PDF' }}
+          </button>
+        </div>
+      </div>
+
+      <p
+        v-if="exportMessage"
+        role="status"
+        class="plants__export-message"
+        :class="{ 'plants__export-message--error': exportMessage.startsWith('Could not') }"
+      >
+        {{ exportMessage }}
       </p>
 
       <ul v-if="filteredPlants.length > 0" class="plants__grid">
@@ -252,6 +335,62 @@ onMounted(loadPage)
   margin-block-end: var(--spacing-md);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+}
+
+.plants__results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-block-end: var(--spacing-sm);
+}
+
+.plants__export {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.plants__export-btn {
+  min-height: 40px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.plants__export-btn--pdf {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.plants__export-btn:hover:not(:disabled) {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.plants__export-btn--pdf:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.plants__export-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.plants__export-message {
+  margin-block-end: var(--spacing-md);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.plants__export-message--error {
+  color: var(--color-error);
 }
 
 .plants__state {

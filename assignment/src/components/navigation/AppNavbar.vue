@@ -93,7 +93,12 @@ onBeforeUnmount(() => {
             <button
               type="button"
               class="notifications-toggle"
-              aria-label="Notifications"
+              :aria-expanded="isNotificationsOpen"
+              :aria-label="
+                authStore.state.unreadCount > 0
+                  ? `Notifications, ${authStore.state.unreadCount} unread`
+                  : 'Notifications'
+              "
               @click="toggleNotifications"
             >
               <AppIcon name="bell" :size="20" />

@@ -27,6 +27,7 @@ const steps = [
       centered
       eyebrow="How GreenLink works"
       title="Three steps to greener streets"
+      title-id="how-it-works-title"
       intro="GreenLink makes it easy to turn good intentions into trees in the ground."
     />
     <ol class="steps">

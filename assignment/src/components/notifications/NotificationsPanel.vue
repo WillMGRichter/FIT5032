@@ -50,7 +50,7 @@ onMounted(loadNotifications)
 <template>
   <div class="notifications-panel">
     <div class="notifications-panel__header">
-      <h3 class="notifications-panel__title">Notifications</h3>
+      <p class="notifications-panel__title">Notifications</p>
       <button
         v-if="notifications.length"
         type="button"

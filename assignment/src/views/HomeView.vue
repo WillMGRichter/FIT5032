@@ -10,11 +10,11 @@ import BaseButton from '@/components/common/BaseButton.vue'
     <HeroSection />
 
     <div class="container">
-      <section class="home__section" aria-label="How GreenLink works">
+      <section class="home__section">
         <HowItWorks />
       </section>
 
-      <section class="home__section" aria-label="Featured projects">
+      <section class="home__section">
         <FeaturedProjects />
       </section>
 
