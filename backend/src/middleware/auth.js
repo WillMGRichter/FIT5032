@@ -1,3 +1,4 @@
+const fs = require('fs')
 const path = require('path')
 const { initializeApp, cert } = require('firebase-admin/app')
 const { getAuth } = require('firebase-admin/auth')
@@ -12,7 +13,12 @@ function initFirebase() {
     console.warn('FIREBASE_SERVICE_ACCOUNT not set — Firebase token verification disabled')
     return
   }
-  const serviceAccount = require(path.resolve(serviceAccountPath))
+  const resolved = path.resolve(serviceAccountPath)
+  if (!fs.existsSync(resolved)) {
+    console.warn(`FIREBASE_SERVICE_ACCOUNT file not found at ${resolved} — Firebase token verification disabled`)
+    return
+  }
+  const serviceAccount = require(resolved)
   initializeApp({ credential: cert(serviceAccount) })
   firebaseReady = true
 }
