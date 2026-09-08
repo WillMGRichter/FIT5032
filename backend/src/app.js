@@ -10,6 +10,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const ratingRoutes = require("./routes/ratingRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const emailRoutes = require("./routes/emailRoutes");
+const impactRoutes = require("./routes/impactRoutes");
 const notFound = require("./middleware/notFound");
 const errorHandler = require("./middleware/errorHandler");
 const { attachUser } = require("./middleware/auth");
@@ -48,6 +49,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/projects/:id/ratings", ratingRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/email", emailRoutes);
+app.use("/api/impact", impactRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
