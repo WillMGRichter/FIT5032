@@ -10,20 +10,33 @@ function initFirebase() {
   if (firebaseReady) return;
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!serviceAccountPath) {
+  let serviceAccount;
+
+  if (serviceAccountJson && serviceAccountJson.trim()) {
+    try {
+      serviceAccount = JSON.parse(serviceAccountJson);
+    } catch (error) {
+      console.warn(
+        "FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON — Firebase token verification disabled",
+      );
+      return;
+    }
+  } else if (serviceAccountPath) {
+    const resolved = path.resolve(serviceAccountPath);
+    if (!fs.existsSync(resolved)) {
+      console.warn(
+        `FIREBASE_SERVICE_ACCOUNT file not found at ${resolved} — Firebase token verification disabled`,
+      );
+      return;
+    }
+    serviceAccount = require(resolved);
+  } else {
     console.warn(
       "FIREBASE_SERVICE_ACCOUNT not set — Firebase token verification disabled",
     );
     return;
   }
-  const resolved = path.resolve(serviceAccountPath);
-  if (!fs.existsSync(resolved)) {
-    console.warn(
-      `FIREBASE_SERVICE_ACCOUNT file not found at ${resolved} — Firebase token verification disabled`,
-    );
-    return;
-  }
-  const serviceAccount = require(resolved);
+
   initializeApp({ credential: cert(serviceAccount) });
   firebaseReady = true;
 }
