@@ -1,8 +1,12 @@
 <script setup>
+import { useAuthStore } from '@/stores/authStore'
 import HeroSection from '@/components/home/HeroSection.vue'
 import HowItWorks from '@/components/home/HowItWorks.vue'
 import FeaturedProjects from '@/components/home/FeaturedProjects.vue'
+import RecommendedProjects from '@/components/recommendations/RecommendedProjects.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
+
+const authStore = useAuthStore()
 </script>
 
 <template>
@@ -10,6 +14,10 @@ import BaseButton from '@/components/common/BaseButton.vue'
     <HeroSection />
 
     <div class="container">
+      <section v-if="authStore.isAuthenticated.value" class="home__section">
+        <RecommendedProjects />
+      </section>
+
       <section class="home__section">
         <HowItWorks />
       </section>

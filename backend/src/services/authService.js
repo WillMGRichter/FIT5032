@@ -3,6 +3,14 @@ const { setFirebaseRoleClaim } = require('../middleware/auth')
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+const VALID_INTERESTS = new Set([
+  'urban-greening',
+  'biodiversity',
+  'waste-reduction',
+  'climate-education',
+  'community-action',
+])
+
 function badRequest(message, details = null) {
   const error = new Error(message)
   error.status = 400
@@ -71,6 +79,7 @@ function validateProfileInput(input) {
   const bio = String(input.bio ?? '').trim()
   let { profileImage } = input
   profileImage = String(profileImage ?? '').trim()
+  let interests = Array.isArray(input.interests) ? input.interests : []
 
   if (!firstName) errors.firstName = 'First name is required.'
   else if (firstName.length > 60) errors.firstName = 'First name must be 60 characters or fewer.'
@@ -94,9 +103,22 @@ function validateProfileInput(input) {
     }
   }
 
+  interests = Array.from(new Set(interests.map((i) => String(i).trim()).filter((i) => i !== '')))
+  if (interests.some((i) => !VALID_INTERESTS.has(i))) {
+    errors.interests = 'Interests must be one of the supported choices.'
+  }
+
   return {
     errors,
-    values: { firstName, lastName, email, location: location || null, bio: bio || null, profileImage: profileImage || null },
+    values: {
+      firstName,
+      lastName,
+      email,
+      location: location || null,
+      bio: bio || null,
+      profileImage: profileImage || null,
+      interests: interests.length ? interests : [],
+    },
   }
 }
 
@@ -135,4 +157,20 @@ async function updateUserProfile(userId, input) {  if (typeof input !== 'object'
   return userModel.update(userId, values)
 }
 
-module.exports = { syncUser, ensureUserFromToken, updateUserProfile }
+function validateInterests(input) {
+  if (!Array.isArray(input)) {
+    throw badRequest('Interests must be a list of supported choices.')
+  }
+  const interests = Array.from(new Set(input.map((i) => String(i).trim()).filter((i) => i !== '')))
+  if (interests.some((i) => !VALID_INTERESTS.has(i))) {
+    throw validationFailure({ interests: 'Interests must be one of the supported choices.' }, 400)
+  }
+  return interests
+}
+
+async function updateUserInterests(userId, input) {
+  const interests = validateInterests(input)
+  return userModel.updateInterests(userId, interests)
+}
+
+module.exports = { syncUser, ensureUserFromToken, updateUserProfile, updateUserInterests }

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, reactive, ref, onMounted } from 'vue'
 import ProfileForm from '@/components/forms/ProfileForm.vue'
+import InterestPicker from '@/components/recommendations/InterestPicker.vue'
 import { formatDate } from '@/utils/formatDate'
 import { getProfile, updateProfile, getMyProjects } from '@/services/authService'
 import { leaveProject } from '@/services/projectService'
@@ -318,6 +319,16 @@ async function handleLeave(project) {
           <button type="button" class="profile__cancel-btn" @click="cancelEditing">Cancel</button>
         </div>
       </form>
+
+      <section class="interests-section" aria-labelledby="interests-heading">
+        <div class="interests-section__card">
+          <h2 id="interests-heading">Recommendation preferences</h2>
+          <p class="interests-section__note">
+            These interests power the "Projects For You" recommendations on the home page.
+          </p>
+          <InterestPicker />
+        </div>
+      </section>
 
       <section class="activity" aria-labelledby="activity-created-title">
         <h2 id="activity-created-title">Projects you've created</h2>
@@ -787,6 +798,24 @@ async function handleLeave(project) {
 
 .next-project__date,
 .next-project__location {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.interests-section {
+  margin-block-start: var(--spacing-2xl);
+}
+
+.interests-section__card {
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.interests-section__note {
+  margin: var(--spacing-xs) 0 var(--spacing-md);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }

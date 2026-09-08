@@ -46,6 +46,11 @@ export async function updateProfile(profile) {
   return data.user
 }
 
+export async function updateInterests(interests) {
+  const data = await apiRequest('/api/auth/preferences', { method: 'PUT', body: { interests } })
+  return data.user
+}
+
 export async function getMyProjects() {
   const data = await apiRequest('/api/auth/me/projects')
   return { created: data?.created ?? [], joined: data?.joined ?? [] }

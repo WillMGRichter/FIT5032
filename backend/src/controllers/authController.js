@@ -40,6 +40,15 @@ async function updateProfile(req, res, next) {
   }
 }
 
+async function updatePreferences(req, res, next) {
+  try {
+    const user = await authService.updateUserInterests(req.user.id, req.body?.interests)
+    res.json({ data: { user } })
+  } catch (error) {
+    next(error)
+  }
+}
+
 async function getMyProjects(req, res, next) {
   try {
     const [created, joined] = await Promise.all([
@@ -52,4 +61,4 @@ async function getMyProjects(req, res, next) {
   }
 }
 
-module.exports = { syncUser, me, getProfile, updateProfile, getMyProjects }
+module.exports = { syncUser, me, getProfile, updateProfile, updatePreferences, getMyProjects }

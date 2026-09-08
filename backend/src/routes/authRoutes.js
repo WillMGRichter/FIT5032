@@ -8,6 +8,7 @@ router.post('/sync', authController.syncUser)
 router.get('/me', authController.me)
 router.get('/profile', requireAuth, authController.getProfile)
 router.put('/profile', requireAuth, authController.updateProfile)
+router.put('/preferences', requireAuth, authController.updatePreferences)
 router.get('/me/projects', requireAuth, authController.getMyProjects)
 
 module.exports = router

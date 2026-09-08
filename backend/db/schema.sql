@@ -20,6 +20,7 @@ CREATE TABLE users (
   profile_image VARCHAR(500),
   bio           VARCHAR(500),
   location      VARCHAR(160),
+  interests     JSONB        NOT NULL DEFAULT '[]',
   created_at    TIMESTAMPTZ  NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ  NOT NULL DEFAULT now()
 );

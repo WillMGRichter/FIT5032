@@ -12,11 +12,12 @@ function mapRow(row) {
     profileImage: row.profile_image,
     bio: row.bio,
     location: row.location,
+    interests: row.interests ?? [],
     createdAt: row.created_at,
   }
 }
 
-const PUBLIC_COLUMNS = `id, firebase_uid, email, first_name, last_name, role, profile_image, bio, location, created_at`
+const PUBLIC_COLUMNS = `id, firebase_uid, email, first_name, last_name, role, profile_image, bio, location, interests, created_at`
 
 async function findByFirebaseUid(firebaseUid) {
   const { rows } = await pool.query(`SELECT ${PUBLIC_COLUMNS} FROM users WHERE firebase_uid = $1`, [firebaseUid])
@@ -54,7 +55,7 @@ async function createWithFirebase({ firebaseUid, email, firstName, lastName }) {
   return mapRow(rows[0])
 }
 
-async function update(id, { email, firstName, lastName, bio, location, profileImage }) {
+async function update(id, { email, firstName, lastName, bio, location, profileImage, interests }) {
   const { rows } = await pool.query(
     `UPDATE users
      SET email = $2,
@@ -63,12 +64,25 @@ async function update(id, { email, firstName, lastName, bio, location, profileIm
          bio = $5,
          location = $6,
          profile_image = $7,
+         interests = $8,
          updated_at = now()
      WHERE id = $1
      RETURNING ${PUBLIC_COLUMNS}`,
-    [id, email.toLowerCase(), firstName, lastName, bio, location, profileImage],
+    [id, email.toLowerCase(), firstName, lastName, bio, location, profileImage, JSON.stringify(interests ?? [])],
   )
   return rows[0] ? mapRow(rows[0]) : null
 }
 
-module.exports = { findByFirebaseUid, findByEmail, findById, emailExistsExcept, createWithFirebase, update }
+async function updateInterests(id, interests) {
+  const { rows } = await pool.query(
+    `UPDATE users
+     SET interests = $2,
+         updated_at = now()
+     WHERE id = $1
+     RETURNING ${PUBLIC_COLUMNS}`,
+    [id, JSON.stringify(interests)],
+  )
+  return rows[0] ? mapRow(rows[0]) : null
+}
+
+module.exports = { findByFirebaseUid, findByEmail, findById, emailExistsExcept, createWithFirebase, update, updateInterests }
