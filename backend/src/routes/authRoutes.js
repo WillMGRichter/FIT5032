@@ -10,5 +10,6 @@ router.get('/profile', requireAuth, authController.getProfile)
 router.put('/profile', requireAuth, authController.updateProfile)
 router.put('/preferences', requireAuth, authController.updatePreferences)
 router.get('/me/projects', requireAuth, authController.getMyProjects)
+router.get('/me/ratings', requireAuth, authController.getMyRatings)
 
 module.exports = router

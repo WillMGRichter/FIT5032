@@ -76,6 +76,14 @@ const initials = computed(() => {
   return `${first}${last}`.toUpperCase() || '?'
 })
 
+const joinedSummary = computed(() => {
+  const joined = activity.value.joined ?? []
+  return {
+    total: joined.length,
+    done: joined.filter((project) => project.status === 'completed').length,
+  }
+})
+
 function validateField(field) {
   switch (field) {
     case 'firstName':
@@ -259,6 +267,21 @@ async function handleLeave(project) {
 
     <template v-else>
       <div v-if="isSuccess" role="status" class="profile__success">Changes saved.</div>
+
+      <div class="impact-summary-card">
+        <div>
+          <h2>Your GreenLink Impact</h2>
+          <p>
+            {{ joinedSummary.total }} project{{ joinedSummary.total === 1 ? '' : 's' }} joined
+            <template v-if="joinedSummary.total > 0">
+              &middot; {{ joinedSummary.done }} completed
+            </template>
+          </p>
+        </div>
+        <RouterLink :to="{ name: 'personal-impact' }" class="impact-summary-card__link">
+          View My Impact
+        </RouterLink>
+      </div>
 
       <article v-if="!isEditing" class="profile-card">
         <div class="profile-card__identity">
@@ -818,5 +841,43 @@ async function handleLeave(project) {
   margin: var(--spacing-xs) 0 var(--spacing-md);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+}
+
+.impact-summary-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm) var(--spacing-md);
+  margin-block-end: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--color-primary-light);
+  border-radius: var(--radius-lg);
+  background-color: #f0f7f0;
+}
+
+.impact-summary-card h2 {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.impact-summary-card p {
+  margin: var(--spacing-xs) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.impact-summary-card__link {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.impact-summary-card__link:hover {
+  background-color: var(--color-primary-dark);
 }
 </style>

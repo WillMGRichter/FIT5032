@@ -13,6 +13,7 @@ const exploreLinks = [
 
 const accountLinks = [
   { to: '/profile', label: 'Profile' },
+  { to: '/impact/me', label: 'My Impact' },
   { to: '/login', label: 'Login' },
   { to: '/register', label: 'Register' },
 ]

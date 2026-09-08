@@ -1,5 +1,6 @@
 const authService = require('../services/authService')
 const projectService = require('../services/projectService')
+const ratingModel = require('../models/ratingModel')
 
 async function syncUser(req, res, next) {
   try {
@@ -61,4 +62,13 @@ async function getMyProjects(req, res, next) {
   }
 }
 
-module.exports = { syncUser, me, getProfile, updateProfile, updatePreferences, getMyProjects }
+async function getMyRatings(req, res, next) {
+  try {
+    const ratings = await ratingModel.findByUser(req.user.id)
+    res.json({ data: ratings })
+  } catch (error) {
+    next(error)
+  }
+}
+
+module.exports = { syncUser, me, getProfile, updateProfile, updatePreferences, getMyProjects, getMyRatings }

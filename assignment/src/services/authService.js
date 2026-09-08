@@ -55,3 +55,8 @@ export async function getMyProjects() {
   const data = await apiRequest('/api/auth/me/projects')
   return { created: data?.created ?? [], joined: data?.joined ?? [] }
 }
+
+export async function getMyRatings() {
+  const data = await apiRequest('/api/auth/me/ratings')
+  return data ?? []
+}

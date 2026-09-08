@@ -185,7 +185,8 @@ async function findJoinedByUser(userId) {
             pp.role AS participation_role, pp.joined_at AS participation_joined_at,
             (SELECT count(*) FROM project_participations pp2 WHERE pp2.project_id = p.id) AS volunteer_count,
             COALESCE(r.avg_score, 0) AS avg_rating,
-            COALESCE(r.rating_count, 0) AS rating_count
+            COALESCE(r.rating_count, 0) AS rating_count,
+            (SELECT COALESCE(sum(quantity), 0)::int FROM project_plants WHERE project_id = p.id) AS plant_total
        FROM project_participations pp
        JOIN projects p ON p.id = pp.project_id
        JOIN categories c ON c.id = p.category_id
@@ -203,6 +204,7 @@ async function findJoinedByUser(userId) {
 
   return rows.map((row) => ({
     ...mapRow(row),
+    plantTotal: Number(row.plant_total) || 0,
     participation: {
       role: row.participation_role,
       joinedAt: row.participation_joined_at,

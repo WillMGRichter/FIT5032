@@ -94,8 +94,28 @@ async function getAggregate(projectId) {
   }
 }
 
+async function findByUser(userId) {
+  const { rows } = await pool.query(
+    `SELECT r.*, p.title, p.status, p.category_id, c.name AS category_name
+       FROM project_ratings r
+       JOIN projects p ON p.id = r.project_id
+       JOIN categories c ON c.id = p.category_id
+      WHERE r.user_id = $1
+      ORDER BY r.created_at DESC`,
+    [userId],
+  )
+  return rows.map((row) => ({
+    ...mapRow(row),
+    projectTitle: row.title,
+    projectStatus: row.status,
+    categoryId: row.category_id,
+    categoryName: row.category_name,
+  }))
+}
+
 module.exports = {
   findById,
+  findByUser,
   findByProject,
   findByProjectAndUser,
   create,

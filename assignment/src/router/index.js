@@ -40,6 +40,12 @@ const routes = [
     component: () => import('@/views/ImpactDashboardView.vue'),
   },
   {
+    path: '/impact/me',
+    name: 'personal-impact',
+    component: () => import('@/views/PersonalImpactView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/plants',
     name: 'plants',
     component: () => import('@/views/PlantsView.vue'),
