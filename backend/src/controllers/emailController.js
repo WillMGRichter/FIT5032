@@ -38,6 +38,16 @@ function validateSendInput(body) {
   return { subject, message, errors }
 }
 
+function parseRecipients(body) {
+  const raw = body.recipients
+  if (typeof raw !== 'string') return raw
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
 async function getProjectParticipants(projectId) {
   const { rows } = await pool.query(
     `SELECT u.id, u.email, u.first_name, u.last_name
@@ -79,7 +89,8 @@ async function sendProjectEmail(req, res, next) {
       throw Object.assign(new Error('Only the project creator or an admin can email participants.'), { status: 403 })
     }
 
-    const { subject, message, errors } = validateSendInput(req.body)
+    const rawRecipients = parseRecipients(req.body)
+    const { subject, message, errors } = validateSendInput({ ...req.body, recipients: rawRecipients })
     if (Object.keys(errors).length > 0) {
       throw badRequest('Validation failed', errors)
     }
@@ -90,9 +101,9 @@ async function sendProjectEmail(req, res, next) {
     }
 
     const participants = await getProjectParticipants(projectId)
-    const recipients = req.body.recipients && req.body.recipients.length > 0
+    const recipients = rawRecipients && rawRecipients.length > 0
       ? participants.filter((p) =>
-          req.body.recipients.some((r) => r.email === p.email),
+          rawRecipients.some((r) => r.email === p.email),
         )
       : participants
 
@@ -145,7 +156,43 @@ async function getProjectParticipantsEndpoint(req, res, next) {
   }
 }
 
+async function sendBroadcastEmail(req, res, next) {
+  try {
+    if (!req.user) {
+      throw Object.assign(new Error('Authentication required.'), { status: 401 })
+    }
+    if (req.user.role !== 'admin') {
+      throw Object.assign(new Error('Admin access is required to email all users.'), { status: 403 })
+    }
+
+    const attachments = (req.files || []).map(buildAttachment)
+    for (const file of (req.files || [])) {
+      emailService.validateAttachment(file)
+    }
+
+    const recipients = parseRecipients(req.body)
+
+    const { subject, message, errors } = validateSendInput({ ...req.body, recipients })
+    if (Object.keys(errors).length > 0) {
+      throw badRequest('Validation failed', errors)
+    }
+
+    await emailService.sendBroadcastEmail({
+      recipients,
+      subject,
+      message,
+      attachments,
+      user: req.user,
+    })
+
+    res.json({ data: { success: true, recipientCount: recipients.length } })
+  } catch (error) {
+    next(error)
+  }
+}
+
 module.exports = {
   sendProjectEmail,
+  sendBroadcastEmail,
   getProjectParticipantsEndpoint,
 }

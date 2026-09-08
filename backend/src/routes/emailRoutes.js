@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const multer = require('multer')
 const controller = require('../controllers/emailController')
-const { requireAuth } = require('../middleware/auth')
+const { requireAuth, requireRole } = require('../middleware/auth')
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -27,6 +27,14 @@ const upload = multer({
     }
   },
 })
+
+router.post(
+  '/broadcast',
+  requireAuth,
+  requireRole('admin'),
+  upload.array('attachments', 5),
+  controller.sendBroadcastEmail,
+)
 
 router.post(
   '/projects/:id/send',
