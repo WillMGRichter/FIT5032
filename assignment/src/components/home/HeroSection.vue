@@ -79,18 +79,6 @@ import BaseButton from '@/components/common/BaseButton.vue'
   margin-top: var(--spacing-sm);
 }
 
-.hero :deep(.base-button--secondary) {
-  background-color: transparent;
-  border-color: rgba(255, 255, 255, 0.6);
-  color: var(--color-surface);
-}
-
-.hero :deep(.base-button--secondary:hover) {
-  border-color: var(--color-surface);
-  color: var(--color-surface);
-  background-color: rgba(255, 255, 255, 0.12);
-}
-
 .hero__art {
   display: none;
   justify-content: center;
@@ -101,5 +89,19 @@ import BaseButton from '@/components/common/BaseButton.vue'
     display: flex;
     opacity: 0.35;
   }
+}
+</style>
+
+<style>
+.hero .base-button--secondary {
+  background-color: transparent;
+  border-color: rgba(255, 255, 255, 0.6);
+  color: var(--color-surface);
+}
+
+.hero .base-button--secondary:hover {
+  border-color: var(--color-surface);
+  color: var(--color-surface);
+  background-color: rgba(255, 255, 255, 0.12);
 }
 </style>

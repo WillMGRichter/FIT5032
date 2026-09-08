@@ -866,12 +866,6 @@ onBeforeUnmount(() => {
   }
 }
 
-.project-map__canvas :deep(.leaflet-container) {
-  width: 100%;
-  height: 100%;
-  font: inherit;
-}
-
 .project-map__overlay {
   position: absolute;
   inset: 0;
@@ -1306,7 +1300,13 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-.project-map :deep(.leaflet-popup-content-wrapper) {
+.project-map__canvas .leaflet-container {
+  width: 100%;
+  height: 100%;
+  font: inherit;
+}
+
+.project-map .leaflet-popup-content-wrapper {
   border-radius: var(--radius-md);
 }
 
