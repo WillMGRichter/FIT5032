@@ -1,6 +1,7 @@
 -- GreenLink database schema
 -- Core entities: users, categories, projects, project_participations, plants, project_plants
 
+DROP TABLE IF EXISTS action_plans CASCADE;
 DROP TABLE IF EXISTS project_plants CASCADE;
 DROP TABLE IF EXISTS project_participations CASCADE;
 DROP TABLE IF EXISTS project_ratings CASCADE;
@@ -64,13 +65,29 @@ CREATE TABLE projects (
 );
 
 CREATE TABLE project_participations (
-  id         BIGSERIAL PRIMARY KEY,
-  project_id BIGINT      NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
-  user_id    BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-  role       VARCHAR(20) NOT NULL DEFAULT 'volunteer'
-             CHECK (role IN ('organiser', 'volunteer')),
-  joined_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  id                   BIGSERIAL PRIMARY KEY,
+  project_id           BIGINT      NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  user_id              BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  role                 VARCHAR(20) NOT NULL DEFAULT 'volunteer'
+                       CHECK (role IN ('organiser', 'volunteer')),
+  joined_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+  suggestions_generated BOOLEAN    NOT NULL DEFAULT FALSE,
   UNIQUE (project_id, user_id)
+);
+
+CREATE TABLE action_plans (
+  id           BIGSERIAL PRIMARY KEY,
+  project_id   BIGINT       NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+  user_id      BIGINT       NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  title        VARCHAR(160) NOT NULL,
+  description  TEXT,
+  due_date     DATE,
+  is_suggested BOOLEAN      NOT NULL DEFAULT FALSE,
+  completed    BOOLEAN      NOT NULL DEFAULT FALSE,
+  completed_at TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  CHECK (completed_at IS NULL OR completed = TRUE)
 );
 
 CREATE TABLE project_plants (
@@ -83,6 +100,8 @@ CREATE TABLE project_plants (
 CREATE INDEX idx_projects_category ON projects (category_id);
 CREATE INDEX idx_projects_status ON projects (status);
 CREATE INDEX idx_participations_user ON project_participations (user_id);
+CREATE INDEX idx_action_plans_user ON action_plans (user_id);
+CREATE INDEX idx_action_plans_project_user ON action_plans (project_id, user_id);
 CREATE INDEX idx_project_plants_plant ON project_plants (plant_id);
 CREATE INDEX idx_users_firebase_uid ON users (firebase_uid);
 

@@ -120,6 +120,9 @@ onBeforeUnmount(() => {
           <RouterLink to="/impact/me" class="nav-links__account" @click="closeMenu">
             My Impact
           </RouterLink>
+          <RouterLink to="/actions" class="nav-links__account" @click="closeMenu">
+            My Actions
+          </RouterLink>
           <RouterLink v-if="isAdmin" to="/admin" class="nav-links__admin" @click="closeMenu">
             Admin
           </RouterLink>

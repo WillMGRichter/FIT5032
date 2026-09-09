@@ -14,6 +14,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { usePermissions } from '@/composables/usePermissions'
 import ProjectPlantList from '@/components/plant/ProjectPlantList.vue'
 import ProjectRating from '@/components/project/ProjectRating.vue'
+import ProjectActionTracker from '@/components/project/ProjectActionTracker.vue'
 import EmailComposeModal from '@/components/email/EmailComposeModal.vue'
 import { getProjectParticipants } from '@/services/emailService'
 import { formatDate } from '@/utils/formatDate'
@@ -367,6 +368,19 @@ const spotsRemaining = computed(() =>
         </div>
 
         <ProjectRating :project-id="project.id" />
+
+        <div
+          v-if="authStore.isAuthenticated.value && isParticipating && !isCancelled"
+          class="details__actions-section"
+        >
+          <ProjectActionTracker
+            :project-id="project.id"
+            :category-id="project.categoryId"
+            :category-name="project.category?.name"
+            :project-title="project.title"
+            :start-date="project.startDate"
+          />
+        </div>
       </article>
     </template>
 
@@ -728,8 +742,20 @@ const spotsRemaining = computed(() =>
   background-color: var(--color-background);
 }
 
+.details__actions-section {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-background);
+}
+
 @media (min-width: 768px) {
   .details__plants-section {
+    padding: var(--spacing-lg) var(--spacing-xl);
+  }
+}
+
+@media (min-width: 768px) {
+  .details__actions-section {
     padding: var(--spacing-lg) var(--spacing-xl);
   }
 }

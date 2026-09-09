@@ -214,7 +214,7 @@ async function findJoinedByUser(userId) {
 
 async function findParticipation(projectId, userId) {
   const { rows } = await pool.query(
-    'SELECT project_id, user_id, role, joined_at FROM project_participations WHERE project_id = $1 AND user_id = $2',
+    'SELECT project_id, user_id, role, joined_at, suggestions_generated FROM project_participations WHERE project_id = $1 AND user_id = $2',
     [projectId, userId],
   )
   return rows[0]
@@ -223,6 +223,7 @@ async function findParticipation(projectId, userId) {
         userId: rows[0].user_id,
         role: rows[0].role,
         joinedAt: rows[0].joined_at,
+        suggestionsGenerated: rows[0].suggestions_generated,
       }
     : null
 }
@@ -240,7 +241,7 @@ async function createParticipation(projectId, userId, role = 'volunteer') {
     `INSERT INTO project_participations (project_id, user_id, role)
      VALUES ($1, $2, $3)
      ON CONFLICT (project_id, user_id) DO NOTHING
-     RETURNING project_id, user_id, role, joined_at`,
+     RETURNING project_id, user_id, role, joined_at, suggestions_generated`,
     [projectId, userId, role],
   )
   return rows[0]
@@ -249,8 +250,19 @@ async function createParticipation(projectId, userId, role = 'volunteer') {
         userId: rows[0].user_id,
         role: rows[0].role,
         joinedAt: rows[0].joined_at,
+        suggestionsGenerated: rows[0].suggestions_generated,
       }
     : null
+}
+
+async function markSuggestionsGenerated(projectId, userId) {
+  const { rowCount } = await pool.query(
+    `UPDATE project_participations
+        SET suggestions_generated = TRUE
+      WHERE project_id = $1 AND user_id = $2`,
+    [projectId, userId],
+  )
+  return rowCount > 0
 }
 
 async function deleteParticipation(projectId, userId) {
@@ -345,6 +357,7 @@ module.exports = {
   findParticipation,
   countParticipations,
   createParticipation,
+  markSuggestionsGenerated,
   deleteParticipation,
   findPlantsByProject,
   setProjectPlants,
