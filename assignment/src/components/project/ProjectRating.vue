@@ -201,6 +201,7 @@ watch(
           <span class="project-rating__max">/ 5</span>
         </div>
         <div
+          role="img"
           class="project-rating__stars-display"
           :aria-label="`${aggregate.averageScore} out of 5 stars`"
         >
@@ -328,7 +329,7 @@ watch(
           <li v-for="rating in ratings" :key="rating.id" class="project-rating__item">
             <div class="project-rating__item-header">
               <span class="project-rating__item-name">{{ rating.userName }}</span>
-              <span class="project-rating__item-stars" :aria-label="`${rating.score} out of 5 stars`">
+              <span role="img" class="project-rating__item-stars" :aria-label="`${rating.score} out of 5 stars`">
                 <span
                   v-for="s in 5"
                   :key="s"

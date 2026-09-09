@@ -28,11 +28,11 @@ async function updateUserRole(id, role, currentUser) {
   }
 
   const allUsers = await adminModel.listUsers()
-  const target = allUsers.find((u) => u.id === targetId)
+  const target = allUsers.find((u) => String(u.id) === String(targetId))
   if (!target) {
     throw notFound(`User with id ${targetId} not found.`)
   }
-  if (target.id === currentUser.id) {
+  if (String(target.id) === String(currentUser.id)) {
     throw badRequest('You cannot change your own role.')
   }
   if (target.role === 'admin' && role === 'member') {
@@ -56,11 +56,11 @@ async function deleteUser(id, currentUser) {
   }
 
   const allUsers = await adminModel.listUsers()
-  const target = allUsers.find((u) => u.id === targetId)
+  const target = allUsers.find((u) => String(u.id) === String(targetId))
   if (!target) {
     throw notFound(`User with id ${targetId} not found.`)
   }
-  if (target.id === currentUser.id) {
+  if (String(target.id) === String(currentUser.id)) {
     throw badRequest('You cannot delete your own account from the admin panel.')
   }
 

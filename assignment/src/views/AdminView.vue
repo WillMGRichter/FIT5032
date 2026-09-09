@@ -222,6 +222,7 @@ onMounted(() => {
                 <td>
                   <select
                     :value="user.role"
+                    :aria-label="`Change role for ${user.fullName || user.email}`"
                     class="admin__role-select"
                     :disabled="user.id === currentUser?.id || busyUserId === user.id"
                     @change="handleRoleChange(user, $event.target.value)"

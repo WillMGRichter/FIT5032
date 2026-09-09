@@ -10,10 +10,22 @@ INSERT INTO categories (id, name, description) VALUES
   ('waterway-care', 'Waterway Care', 'Protecting and revegetating creeks, rivers and wetlands across the Yarra and Maribyrnong catchments.'),
   ('green-roof-wall', 'Green Roof & Wall', 'Turning rooftops and bare walls into living infrastructure that cools the city and slows stormwater.');
 
-INSERT INTO users (email, first_name, last_name, role) VALUES
-  ('maya.thompson@greenlink.org.au', 'Maya', 'Thompson', 'admin'),
-  ('arjun.patel@example.com',         'Arjun', 'Patel', 'member'),
-  ('chloe.zhang@example.com',         'Chloe', 'Zhang', 'member');
+INSERT INTO users (email, first_name, last_name, role, location, interests) VALUES
+  ('maya.thompson@greenlink.org.au',  'Maya',    'Thompson', 'admin',  'Carlton', '["urban-greening","community-action"]'),
+  ('arjun.patel@example.com',         'Arjun',   'Patel',    'member', 'Fitzroy', '["urban-greening","biodiversity"]'),
+  ('chloe.zhang@example.com',         'Chloe',   'Zhang',    'member', 'Footscray', '["waste-reduction","community-action"]'),
+  ('sophie.bennett@example.com',      'Sophie',  'Bennett',  'member', 'Brunswick', '["biodiversity","climate-education"]'),
+  ('oliver.morris@example.com',       'Oliver',  'Morris',   'member', 'Northcote', '["urban-greening"]'),
+  ('isabella.nguyen@example.com',     'Isabella','Nguyen',   'member', 'Richmond', '["community-action","waste-reduction"]'),
+  ('james.wilson@example.com',        'James',   'Wilson',   'member', 'Hawthorn', '["climate-education"]'),
+  ('emma.taylor@example.com',         'Emma',    'Taylor',   'member', 'Yarraville', '["biodiversity","urban-greening"]'),
+  ('liam.martin@example.com',         'Liam',    'Martin',   'member', 'Preston', '["waste-reduction"]'),
+  ('mia.clark@example.com',           'Mia',     'Clark',    'member', 'St Kilda', '["community-action"]'),
+  ('noah.white@example.com',          'Noah',    'White',    'member', 'Malvern', '["biodiversity","climate-education"]'),
+  ('charlotte.lee@example.com',       'Charlotte','Lee',     'member', 'Glenroy', '["urban-greening","community-action"]'),
+  ('ethan.harris@example.com',        'Ethan',   'Harris',   'member', 'Coburg', '["climate-education","biodiversity"]'),
+  ('grace.walker@example.com',        'Grace',   'Walker',   'member', 'Essendon', '["urban-greening","waste-reduction"]'),
+  ('lucas.johnson@example.com',       'Lucas',   'Johnson',  'member', 'Kensington', '["community-action"]');
 
 INSERT INTO plants
   (common_name, scientific_name, description, image, habitat, maintenance_level)
