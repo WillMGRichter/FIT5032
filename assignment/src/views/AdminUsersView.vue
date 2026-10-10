@@ -6,6 +6,7 @@ import { usePermissions } from '@/composables/usePermissions'
 import { getUsers, updateUserRole, deleteUser } from '@/services/adminService'
 import { ApiError } from '@/services/api'
 import DataTable from '@/components/common/DataTable.vue'
+import EmailComposeModal from '@/components/email/EmailComposeModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -17,6 +18,8 @@ const error = ref(null)
 const actionError = ref(null)
 const actionSuccess = ref('')
 const busyUserId = ref(null)
+const showEmailModal = ref(false)
+const emailUser = ref(null)
 
 const currentUser = computed(() => authStore.state.user)
 
@@ -127,6 +130,12 @@ async function handleDeleteUser(user) {
   }
 }
 
+function openEmailForUser(user) {
+  if (busyUserId.value) return
+  emailUser.value = user
+  showEmailModal.value = true
+}
+
 onMounted(() => {
   if (!isAdmin.value) {
     router.replace({ name: 'unauthorized' })
@@ -187,6 +196,15 @@ onMounted(() => {
             </select>
             <button
               type="button"
+              class="admin-users__email-btn"
+              :disabled="busyUserId === row.id"
+              :aria-label="`Email ${row.fullName}`"
+              @click="openEmailForUser(row)"
+            >
+              Email
+            </button>
+            <button
+              type="button"
               class="admin-users__delete-btn"
               :disabled="row.id === currentUser?.id || busyUserId === row.id"
               :aria-label="`Delete ${row.fullName}`"
@@ -198,6 +216,14 @@ onMounted(() => {
         </template>
       </DataTable>
     </template>
+
+    <EmailComposeModal
+      v-if="emailUser"
+      :visible="showEmailModal"
+      :recipients="[emailUser]"
+      :recipient-label="emailUser.fullName || emailUser.email"
+      @close="showEmailModal = false"
+    />
   </section>
 </template>
 
@@ -300,6 +326,25 @@ onMounted(() => {
 
 .admin-users__role-select:disabled {
   opacity: 0.5;
+}
+
+.admin-users__email-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+}
+
+.admin-users__email-btn:hover:not(:disabled) {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.admin-users__email-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .admin-users__delete-btn {

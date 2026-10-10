@@ -1,10 +1,12 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePermissions } from '@/composables/usePermissions'
 import { getProjects, deleteProject } from '@/services/projectService'
+import { getProjectParticipants } from '@/services/emailService'
 import { ApiError } from '@/services/api'
 import DataTable from '@/components/common/DataTable.vue'
+import EmailComposeModal from '@/components/email/EmailComposeModal.vue'
 
 const router = useRouter()
 const { isAdmin } = usePermissions()
@@ -15,6 +17,12 @@ const error = ref(null)
 const actionError = ref(null)
 const actionSuccess = ref('')
 const busyProjectId = ref(null)
+const showEmailModal = ref(false)
+const emailProject = ref(null)
+const emailProjectRecipients = ref([])
+const emailRecipientLabel = computed(() =>
+  emailProject.value ? `Participants of "${emailProject.value.title}"` : '',
+)
 
 function fmtDate(value) {
   if (!value) return ''
@@ -132,6 +140,28 @@ async function handleDeleteProject(project) {
   }
 }
 
+async function openEmailForProject(project) {
+  if (busyProjectId.value) return
+  busyProjectId.value = project.id
+  actionError.value = null
+  actionSuccess.value = ''
+  try {
+    const participants = (await getProjectParticipants(project.id)) ?? []
+    if (participants.length === 0) {
+      actionError.value = `No participants to email for "${project.title}".`
+      return
+    }
+    emailProject.value = project
+    emailProjectRecipients.value = participants
+    showEmailModal.value = true
+  } catch (err) {
+    actionError.value =
+      err instanceof ApiError && err.message ? err.message : 'Could not load participants.'
+  } finally {
+    busyProjectId.value = null
+  }
+}
+
 onMounted(() => {
   if (!isAdmin.value) {
     router.replace({ name: 'unauthorized' })
@@ -196,6 +226,15 @@ onMounted(() => {
             </RouterLink>
             <button
               type="button"
+              class="admin-projects__email-btn"
+              :disabled="busyProjectId === row.id"
+              :aria-label="`Email participants of ${row.title}`"
+              @click="openEmailForProject(row)"
+            >
+              Email participants
+            </button>
+            <button
+              type="button"
               class="admin-projects__delete-btn"
               :disabled="busyProjectId === row.id"
               :aria-label="`Delete ${row.title}`"
@@ -207,6 +246,16 @@ onMounted(() => {
         </template>
       </DataTable>
     </template>
+
+    <EmailComposeModal
+      v-if="emailProject"
+      :visible="showEmailModal"
+      :recipients="emailProjectRecipients"
+      :recipient-label="emailRecipientLabel"
+      :project-title="emailProject.title"
+      :project-id="String(emailProject.id)"
+      @close="showEmailModal = false"
+    />
   </section>
 </template>
 
@@ -311,6 +360,26 @@ onMounted(() => {
 .admin-projects__edit-btn:hover {
   background-color: var(--color-primary);
   color: var(--color-surface);
+}
+
+.admin-projects__email-btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.admin-projects__email-btn:hover:not(:disabled) {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.admin-projects__email-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .admin-projects__delete-btn {
