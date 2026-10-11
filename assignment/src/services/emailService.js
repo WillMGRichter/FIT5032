@@ -2,37 +2,71 @@ import { apiRequest, ApiError } from './api.js'
 import { auth } from './firebase.js'
 
 const BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:3000'
+const EMAIL_FUNCTION_URL = import.meta.env?.VITE_EMAIL_FUNCTION_URL || ''
+
+const EXTENSION_TO_MIME = {
+  '.pdf': 'application/pdf',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.txt': 'text/plain',
+  '.csv': 'text/csv',
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.xls': 'application/vnd.ms-excel',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+}
+
+async function fileToAttachment(file) {
+  const buffer = new Uint8Array(await file.arrayBuffer())
+  let binary = ''
+  const chunkSize = 0x8000
+  for (let i = 0; i < buffer.length; i += chunkSize) {
+    binary += String.fromCharCode(...buffer.subarray(i, i + chunkSize))
+  }
+
+  const ext = '.' + file.name.split('.').pop().toLowerCase()
+  return {
+    content: btoa(binary),
+    filename: file.name,
+    type: file.type || EXTENSION_TO_MIME[ext] || 'application/octet-stream',
+  }
+}
 
 export async function sendEmail({ recipients, subject, message, attachments = [] }) {
+  if (!EMAIL_FUNCTION_URL) {
+    throw new ApiError('Email function is not configured. Set VITE_EMAIL_FUNCTION_URL.', {
+      status: 503,
+      details: null,
+    })
+  }
   if (!auth.currentUser) {
     throw new ApiError('You must be signed in to send email.', { status: 401, details: null })
   }
 
   const token = await auth.currentUser.getIdToken(true)
-
-  const formData = new FormData()
-  if (recipients && recipients.length > 0) {
-    formData.append('recipients', JSON.stringify(recipients.map((r) => ({ email: r.email }))))
-  }
-  formData.append('subject', subject)
-  formData.append('message', message)
-  for (const file of attachments) {
-    formData.append('attachments', file)
-  }
-
-  const url = new URL(`${BASE_URL.replace(/\/+$/, '')}/api/email/broadcast`)
+  const attachmentPayload = await Promise.all(attachments.map(fileToAttachment))
 
   let response
   try {
-    response = await fetch(url, {
+    response = await fetch(EMAIL_FUNCTION_URL, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify({
+        kind: 'broadcast',
+        recipients: (recipients || []).map((r) => ({ email: r.email })),
+        subject,
+        message,
+        ...(attachmentPayload.length > 0 ? { attachments: attachmentPayload } : {}),
+      }),
     })
   } catch (details) {
-    throw new ApiError('Unable to reach the GreenLink API', { status: 0, details })
+    throw new ApiError('Unable to reach the email service', { status: 0, details })
   }
 
   const payload = await response.json().catch(() => null)
@@ -44,7 +78,7 @@ export async function sendEmail({ recipients, subject, message, attachments = []
     })
   }
 
-  return payload?.data
+  return payload ?? null
 }
 
 export async function sendProjectEmail(projectId, { recipients, subject, message, attachments = [] }) {
