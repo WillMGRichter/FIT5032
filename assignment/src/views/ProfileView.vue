@@ -1,5 +1,6 @@
 <script setup>
 import { computed, reactive, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import ProfileForm from '@/components/forms/ProfileForm.vue'
 import InterestPicker from '@/components/recommendations/InterestPicker.vue'
 import { formatDate } from '@/utils/formatDate'
@@ -9,6 +10,7 @@ import { ApiError } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const profile = ref(null)
 const activity = ref({ created: [], joined: [] })
@@ -142,6 +144,11 @@ function cancelEditing() {
   Object.keys(errors).forEach((key) => (errors[key] = ''))
   submitError.value = null
   isEditing.value = false
+}
+
+async function handleLogout() {
+  await authStore.logout()
+  router.push({ name: 'home' })
 }
 
 async function handleSubmit() {
@@ -306,6 +313,7 @@ async function handleLeave(project) {
             <button type="button" class="profile__edit-btn" @click="startEditing">
               Edit profile
             </button>
+            <button type="button" class="profile__logout-btn" @click="handleLogout">Logout</button>
           </div>
         </div>
 
@@ -592,6 +600,20 @@ async function handleLeave(project) {
 
 .profile__edit-btn:hover {
   background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.profile__logout-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  color: var(--color-error);
+  font-weight: var(--font-weight-semibold);
+}
+
+.profile__logout-btn:hover {
+  background-color: var(--color-error);
   color: var(--color-surface);
 }
 

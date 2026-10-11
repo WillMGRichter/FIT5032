@@ -1,12 +1,10 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
 import AppIcon from '@/components/common/AppIcon.vue'
 import { useAuthStore } from '@/stores/authStore'
 import { usePermissions } from '@/composables/usePermissions'
 import NotificationsPanel from '@/components/notifications/NotificationsPanel.vue'
 
-const router = useRouter()
 const authStore = useAuthStore()
 const { isAdmin } = usePermissions()
 
@@ -42,13 +40,6 @@ function handleClickOutside(event) {
   if (notificationsRef.value && !notificationsRef.value.contains(event.target)) {
     closeNotifications()
   }
-}
-
-async function handleLogout() {
-  closeMenu()
-  closeNotifications()
-  await authStore.logout()
-  router.push({ name: 'home' })
 }
 
 onMounted(() => {
@@ -90,6 +81,22 @@ onBeforeUnmount(() => {
         </RouterLink>
 
         <template v-if="authStore.isAuthenticated.value">
+          <div class="profile-dropdown">
+            <RouterLink to="/profile" class="profile-dropdown__trigger" @click="closeMenu; closeNotifications()">
+              Profile
+            </RouterLink>
+            <div class="profile-dropdown__menu">
+              <RouterLink to="/impact/me" @click="closeMenu; closeNotifications()">
+                My Impact
+              </RouterLink>
+              <RouterLink to="/actions" @click="closeMenu; closeNotifications()">
+                My Actions
+              </RouterLink>
+            </div>
+          </div>
+          <RouterLink v-if="isAdmin" to="/admin" class="nav-links__admin" @click="closeMenu; closeNotifications()">
+            Admin
+          </RouterLink>
           <div ref="notificationsRef" class="notifications-wrapper">
             <button
               type="button"
@@ -114,19 +121,6 @@ onBeforeUnmount(() => {
               @click.stop
             />
           </div>
-          <RouterLink to="/profile" class="nav-links__account" @click="closeMenu">
-            Profile
-          </RouterLink>
-          <RouterLink to="/impact/me" class="nav-links__account" @click="closeMenu">
-            My Impact
-          </RouterLink>
-          <RouterLink to="/actions" class="nav-links__account" @click="closeMenu">
-            My Actions
-          </RouterLink>
-          <RouterLink v-if="isAdmin" to="/admin" class="nav-links__admin" @click="closeMenu">
-            Admin
-          </RouterLink>
-          <button type="button" class="nav-links__logout" @click="handleLogout">Logout</button>
         </template>
         <template v-else>
           <RouterLink to="/login" class="nav-links__account" @click="closeMenu">Login</RouterLink>
@@ -230,13 +224,15 @@ onBeforeUnmount(() => {
   text-underline-offset: 6px;
 }
 
-.nav-links__logout {
-  padding: var(--spacing-md) var(--spacing-lg);
-  border: none;
-  background: none;
-  color: var(--color-error);
-  font-size: var(--font-size-md);
-  text-align: left;
+/* Profile hover dropdown */
+.profile-dropdown {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-dropdown__menu {
+  display: flex;
+  flex-direction: column;
 }
 
 .nav-links__admin {
@@ -249,11 +245,6 @@ onBeforeUnmount(() => {
 .nav-links__admin:hover {
   color: var(--color-primary-dark);
   background-color: var(--color-background);
-}
-
-.nav-links__logout:hover {
-  color: var(--color-error);
-  text-decoration: underline;
 }
 
 /* Notifications */
@@ -334,9 +325,42 @@ onBeforeUnmount(() => {
     white-space: nowrap;
   }
 
-  .nav-links__logout {
-    padding: var(--spacing-xs) var(--spacing-md);
-    font-size: inherit;
+  .profile-dropdown {
+    position: relative;
+  }
+
+  .profile-dropdown__menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    min-width: 180px;
+    padding-block: var(--spacing-xs);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-md);
+  }
+
+  .profile-dropdown:hover .profile-dropdown__menu,
+  .profile-dropdown:focus-within .profile-dropdown__menu {
+    display: flex;
+  }
+
+  .profile-dropdown__menu a {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: 0;
+    white-space: nowrap;
+  }
+
+  .profile-dropdown__menu a:hover {
+    color: var(--color-primary-dark);
+    background-color: var(--color-background);
+  }
+
+  .profile-dropdown__menu a.router-link-exact-active {
+    text-decoration: none;
   }
 
   .nav-links__admin {
