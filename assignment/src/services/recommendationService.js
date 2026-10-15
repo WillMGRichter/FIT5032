@@ -1,3 +1,6 @@
+import { httpsCallable } from 'firebase/functions'
+import { auth, functions } from './firebase'
+
 export const INTERESTS = [
   { id: 'urban-greening', label: 'Urban Greening' },
   { id: 'biodiversity', label: 'Biodiversity' },
@@ -296,4 +299,32 @@ export function getRecommendedProjects(user, projects, participation = {}, optio
   }
 
   return scored
+}
+
+/**
+ * Prefers the server-side `recommendProjects` callable (same scoring rules,
+ * authoritative data) and transparently falls back to the local scorer when
+ * the function is unavailable, unauthenticated or errors.
+ * returns Promise<[{ project, score, reasons }]>
+ */
+export async function fetchRecommendedProjects(user, projects, participation = {}, options = {}) {
+  const limit = options.limit ?? 5
+  const local = () => getRecommendedProjects(user, projects, participation, { limit })
+
+  if (!auth?.currentUser) return local()
+
+  try {
+    const call = httpsCallable(functions, 'recommendProjects')
+    const { data } = await call({ limit })
+    const recommendations = Array.isArray(data?.recommendations) ? data.recommendations : null
+    if (!recommendations) return local()
+
+    const byId = new Map((Array.isArray(projects) ? projects : []).map((p) => [Number(p.id), p]))
+    return recommendations.map((item) => ({
+      ...item,
+      project: byId.get(Number(item.project?.id)) ?? item.project,
+    }))
+  } catch {
+    return local()
+  }
 }

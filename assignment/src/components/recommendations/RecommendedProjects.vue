@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import ProjectCard from '@/components/project/ProjectCard.vue'
 import InterestPicker from '@/components/recommendations/InterestPicker.vue'
-import { getRecommendedProjects } from '@/services/recommendationService'
+import { fetchRecommendedProjects } from '@/services/recommendationService'
 import { getProjects } from '@/services/projectService'
 import { getMyProjects } from '@/services/authService'
 import { useAuthStore } from '@/stores/authStore'
@@ -15,16 +15,10 @@ const authStore = useAuthStore()
 
 const projects = ref([])
 const participation = ref({ created: [], joined: [] })
+const recommendations = ref([])
 const isLoading = ref(true)
 const loadError = ref(null)
 const showPreferences = ref(false)
-
-const recommendations = computed(() => {
-  if (isLoading.value || loadError.value) return []
-  return getRecommendedProjects(authStore.state.user, projects.value, participation.value, {
-    limit: props.limit,
-  })
-})
 
 const hasPersonalisation = computed(() => {
   const user = authStore.state.user
@@ -47,7 +41,14 @@ async function load() {
     const [allProjects, mine] = await Promise.all([getProjects(), getMyProjects()])
     projects.value = allProjects ?? []
     participation.value = mine ?? { created: [], joined: [] }
+    recommendations.value = await fetchRecommendedProjects(
+      authStore.state.user,
+      projects.value,
+      participation.value,
+      { limit: props.limit },
+    )
   } catch (err) {
+    recommendations.value = []
     loadError.value = err instanceof Error && err.message ? err.message : 'Could not load recommendations.'
   } finally {
     isLoading.value = false
