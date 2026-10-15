@@ -1,6 +1,7 @@
 <script setup>
 import FormInput from './FormInput.vue'
 import FormTextarea from './FormTextarea.vue'
+import LocationAutocomplete from './LocationAutocomplete.vue'
 
 defineProps({
   profile: { type: Object, required: true },
@@ -54,11 +55,10 @@ function set(field, value) {
       @update:model-value="set('email', $event)"
     />
 
-    <FormInput
+    <LocationAutocomplete
       id="profile-location"
       :model-value="profile.location"
       label="Location (optional)"
-      type="text"
       placeholder="e.g. Brunswick, Melbourne"
       :error="errors.location ?? ''"
       :disabled="disabled"

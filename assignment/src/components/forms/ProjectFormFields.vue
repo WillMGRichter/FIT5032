@@ -4,6 +4,7 @@ import FormTextarea from './FormTextarea.vue'
 import FormSelect from './FormSelect.vue'
 import FormNumberInput from './FormNumberInput.vue'
 import FormCheckboxGroup from './FormCheckboxGroup.vue'
+import LocationAutocomplete from './LocationAutocomplete.vue'
 import { PROJECT_STATUS_OPTIONS } from '@/composables/useProjectValidation'
 
 defineProps({
@@ -19,6 +20,12 @@ const emit = defineEmits(['update'])
 
 function set(field, value) {
   emit('update', { field, value })
+}
+
+function onCoordinates({ latitude, longitude }) {
+  if (typeof latitude === 'number') emit('update', { field: 'latitude', value: latitude.toFixed(6) })
+  if (typeof longitude === 'number')
+    emit('update', { field: 'longitude', value: longitude.toFixed(6) })
 }
 </script>
 
@@ -58,16 +65,20 @@ function set(field, value) {
 
   <fieldset class="project-fields__fieldset" :disabled="disabled">
     <legend>Where it happens</legend>
-    <FormInput
+    <LocationAutocomplete
       :id="`${idPrefix}-location`"
       :model-value="form.location"
       label="Location"
-      type="text"
       required
-      placeholder="e.g. Royal Park, Parkville"
+      placeholder="Start typing, e.g. Royal Park, Parkville"
       :error="errors.location ?? ''"
+      :disabled="disabled"
       @update:model-value="set('location', $event)"
+      @select="onCoordinates"
     />
+    <p class="project-fields__hint">
+      Pick a suggestion to auto-fill the coordinates below, or enter them manually.
+    </p>
     <div class="project-fields__row">
       <FormNumberInput
         :id="`${idPrefix}-latitude`"
