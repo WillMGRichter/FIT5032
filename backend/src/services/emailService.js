@@ -1,6 +1,26 @@
 const crypto = require('node:crypto')
+const fs = require('node:fs')
+const path = require('node:path')
 
 const sgMail = require('@sendgrid/mail')
+
+const JOIN_ATTACHMENT_PATH = path.join(__dirname, '..', '..', 'assets', 'join_attachment.png')
+let joinAttachmentCache
+
+function getJoinAttachment() {
+  if (joinAttachmentCache !== undefined) return joinAttachmentCache
+  try {
+    joinAttachmentCache = {
+      content: fs.readFileSync(JOIN_ATTACHMENT_PATH).toString('base64'),
+      filename: 'greenlink-join.png',
+      type: 'image/png',
+      disposition: 'attachment',
+    }
+  } catch {
+    joinAttachmentCache = null
+  }
+  return joinAttachmentCache
+}
 
 const API_KEY = process.env.SENDGRID_API_KEY
 const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@greenlink.org'
@@ -185,15 +205,23 @@ async function sendParticipationConfirmation({ userId, email, userName, projectT
     throw serviceError(400, 'Recipient email is invalid.')
   }
 
+  const attachment = getJoinAttachment()
+
   await sgMail.send({
     to: email,
     from: FROM_EMAIL,
     subject: message.subject,
     text: message.text,
     html: message.html,
+    ...(attachment ? { attachments: [attachment] } : {}),
   })
 
-  return { kind: 'confirmation', recipientCount: 1, attachmentCount: 0, uid: userId }
+  return {
+    kind: 'confirmation',
+    recipientCount: 1,
+    attachmentCount: attachment ? 1 : 0,
+    uid: userId,
+  }
 }
 
 // Kept for backward compatibility in tests and tooling that still sign payloads.
