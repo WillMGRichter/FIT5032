@@ -1,6 +1,7 @@
 <script setup>
 import AppNavbar from '@/components/navigation/AppNavbar.vue'
 import AppFooter from '@/components/navigation/AppFooter.vue'
+import AccessibilityWidget from '@/components/accessibility/AccessibilityWidget.vue'
 </script>
 
 <template>
@@ -13,6 +14,7 @@ import AppFooter from '@/components/navigation/AppFooter.vue'
       </div>
     </main>
     <AppFooter />
+    <AccessibilityWidget />
   </div>
 </template>
 
