@@ -1,14 +1,22 @@
-const { onRequest } = require('firebase-functions/v2/https')
+const { onRequest, onCall, HttpsError } = require('firebase-functions/v2/https')
+const { onSchedule } = require('firebase-functions/v2/scheduler')
 const { defineSecret } = require('firebase-functions/params')
 const { logger } = require('firebase-functions/logger')
 const admin = require('firebase-admin')
 const lib = require('./lib')
+const { getQuery } = require('./db')
+const { runProjectLifecycle } = require('./jobs/projectLifecycle')
+const { runActionReminders } = require('./jobs/actionReminders')
+const { getRecommendationsForUser } = require('./recommendations')
 
 admin.initializeApp()
+
+const REGION = 'australia-southeast1'
 
 const SENDGRID_API_KEY = defineSecret('SENDGRID_API_KEY')
 const SENDGRID_FROM_EMAIL = defineSecret('SENDGRID_FROM_EMAIL')
 const EMAIL_HMAC_SECRET = defineSecret('EMAIL_HMAC_SECRET')
+const DATABASE_URL = defineSecret('DATABASE_URL')
 
 function jsonError(status, code, message, errors) {
   const detail = { error: message }
@@ -76,6 +84,60 @@ exports.sendGreenLinkEmail = onRequest(
 
       const message = status === 500 ? 'Something went wrong while sending the email.' : error.message
       res.status(status).json(jsonError(status, code || undefined, message, error.details))
+    }
+  },
+)
+
+exports.projectLifecycle = onSchedule(
+  {
+    schedule: 'every day 00:10',
+    timeZone: 'Australia/Melbourne',
+    region: REGION,
+    secrets: [DATABASE_URL],
+  },
+  async () => {
+    const summary = await runProjectLifecycle({ query: getQuery() })
+    logger.info('projectLifecycle ok', summary)
+  },
+)
+
+exports.actionReminders = onSchedule(
+  {
+    schedule: 'every day 08:00',
+    timeZone: 'Australia/Melbourne',
+    region: REGION,
+    secrets: [DATABASE_URL],
+  },
+  async () => {
+    const summary = await runActionReminders({ query: getQuery() })
+    logger.info('actionReminders ok', summary)
+  },
+)
+
+exports.recommendProjects = onCall(
+  {
+    region: REGION,
+    cors: true,
+    secrets: [DATABASE_URL],
+  },
+  async (request) => {
+    if (!request.auth || !request.auth.uid) {
+      throw new HttpsError('unauthenticated', 'You must be signed in to get recommendations.')
+    }
+
+    const rawLimit = request.data ? request.data.limit : undefined
+    const limit = Number.isInteger(rawLimit) ? Math.min(Math.max(rawLimit, 1), 20) : 5
+
+    try {
+      const recommendations = await getRecommendationsForUser({
+        query: getQuery(),
+        uid: request.auth.uid,
+        limit,
+      })
+      return { recommendations }
+    } catch (error) {
+      logger.error('recommendProjects failed', { uid: request.auth.uid, message: error.message })
+      throw new HttpsError('internal', 'Unable to generate recommendations right now.')
     }
   },
 )
