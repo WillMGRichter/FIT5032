@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FormInput from '@/components/forms/FormInput.vue'
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons.vue'
 import { useAuthStore } from '@/stores/authStore'
 
 const route = useRoute()
@@ -57,6 +58,20 @@ function onFieldUpdate({ field, value }) {
   submitError.value = null
 }
 
+function redirectTarget() {
+  return typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/')
+    ? route.query.redirect
+    : '/'
+}
+
+function handleSocialSuccess() {
+  router.push(redirectTarget())
+}
+
+function handleSocialError(message) {
+  submitError.value = message
+}
+
 async function handleSubmit() {
   if (isSubmitting.value) return
 
@@ -74,11 +89,7 @@ async function handleSubmit() {
       password: form.password,
     })
 
-    const redirect =
-      typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/')
-        ? route.query.redirect
-        : '/'
-    router.push(redirect)
+    router.push(redirectTarget())
   } catch (err) {
     if (err?.code && err.code.startsWith('auth/')) {
       submitError.value = firebaseErrorMessage(err.code)
@@ -132,6 +143,12 @@ async function handleSubmit() {
       <button type="submit" class="login__submit" :disabled="isSubmitting">
         {{ isSubmitting ? 'Logging in…' : 'Log in' }}
       </button>
+
+      <SocialLoginButtons
+        :disabled="isSubmitting"
+        @success="handleSocialSuccess"
+        @error="handleSocialError"
+      />
 
       <p class="login__switch">
         New to GreenLink?

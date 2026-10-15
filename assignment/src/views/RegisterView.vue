@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import FormInput from '@/components/forms/FormInput.vue'
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons.vue'
 import { useAuthStore } from '@/stores/authStore'
 
 const route = useRoute()
@@ -96,6 +97,23 @@ function onFieldUpdate({ field, value }) {
   submitError.value = null
 }
 
+function redirectTarget() {
+  return typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/')
+    ? route.query.redirect
+    : '/'
+}
+
+function handleSocialSuccess() {
+  isSuccess.value = true
+  setTimeout(() => {
+    router.push(redirectTarget())
+  }, 1000)
+}
+
+function handleSocialError(message) {
+  submitError.value = message
+}
+
 async function handleSubmit() {
   if (isSubmitting.value || isSuccess.value) return
 
@@ -118,7 +136,7 @@ async function handleSubmit() {
 
     isSuccess.value = true
     setTimeout(() => {
-      router.push(typeof route.query.redirect === 'string' ? route.query.redirect : '/')
+      router.push(redirectTarget())
     }, 1000)
   } catch (err) {
     if (err?.code && err.code.startsWith('auth/')) {
@@ -217,6 +235,12 @@ async function handleSubmit() {
       <button type="submit" class="register__submit" :disabled="isSubmitting">
         {{ isSubmitting ? 'Creating account…' : 'Create account' }}
       </button>
+
+      <SocialLoginButtons
+        :disabled="isSubmitting"
+        @success="handleSocialSuccess"
+        @error="handleSocialError"
+      />
 
       <p class="register__switch">
         Already have an account?

@@ -63,6 +63,32 @@ async function register(userData) {
   return user
 }
 
+async function loginWithProvider(providerId) {
+  const user = await authService.loginWithProvider(providerId)
+  state.user = user
+  state.firebaseUser = { uid: user.firebaseUid, email: user.email }
+  try {
+    const result = await notificationService.getUnreadCount()
+    state.unreadCount = result.count
+  } catch {
+    state.unreadCount = 0
+  }
+  return user
+}
+
+async function linkProviderAccount(credentials) {
+  const user = await authService.linkProviderAccount(credentials)
+  state.user = user
+  state.firebaseUser = { uid: user.firebaseUid, email: user.email }
+  try {
+    const result = await notificationService.getUnreadCount()
+    state.unreadCount = result.count
+  } catch {
+    state.unreadCount = 0
+  }
+  return user
+}
+
 async function logout() {
   try {
     await authService.logout()
@@ -92,6 +118,8 @@ export function useAuthStore() {
     init,
     login,
     register,
+    loginWithProvider,
+    linkProviderAccount,
     logout,
     updateUser,
     refreshUnreadCount,
