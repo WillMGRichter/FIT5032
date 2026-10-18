@@ -3,8 +3,8 @@ import { ref, computed, watch } from 'vue'
 import { exportCSV, exportPDF, dateStamp } from '@/services/exportService'
 
 const props = defineProps({
-  rows: { type: Array, default: () => [] },
-  columns: { type: Array, default: () => [] },
+  rows: { type: Array, default: () => [] }, //Actual Display data
+  columns: { type: Array, default: () => [] }, // Configuration rules for data {Key, Label} parings for displaying whats in the row data
   rowKey: { type: String, default: 'id' },
   pageSize: { type: Number, default: 10 },
   emptyMessage: { type: String, default: 'No records found.' },
@@ -15,19 +15,19 @@ const props = defineProps({
 
 const emit = defineEmits(['export-start', 'export-done', 'export-error'])
 
-const globalSearch = ref('')
-const sortKey = ref('')
+const globalSearch = ref('') //Top Search bar search value
+const sortKey = ref('') //Current column being sorted on
 const sortDirection = ref('asc')
 const currentPage = ref(1)
 
-const filterInputs = ref({})
+const filterInputs = ref({}) // Creating lookup dictionary for each columns current filter state/value
 props.columns.forEach((col) => {
   if (col.searchable) {
     filterInputs.value[col.key] = ''
   }
 })
 
-watch(
+watch( //If columns change, ensure that the filterInputs object is updated to include any new searchable columns
   () => props.columns,
   (cols) => {
     cols.forEach((col) => {
@@ -38,11 +38,11 @@ watch(
   },
 )
 
-function getNestedValue(row, key) {
+function getNestedValue(row, key) { //Gets value from row even when nested eg site.location.city.name
   return key.split('.').reduce((obj, k) => (obj != null ? obj[k] : undefined), row)
 }
 
-function cellText(row, col) {
+function cellText(row, col) { //Applies specific column formatting if defined, otherwise returns the raw value as a string
   const raw = getNestedValue(row, col.key)
   if (col.format) return col.format(raw, row)
   if (raw == null) return ''
@@ -52,27 +52,29 @@ function cellText(row, col) {
 const filteredRows = computed(() => {
   let result = [...props.rows]
 
+  // text search filter
   if (globalSearch.value.trim()) {
     const q = globalSearch.value.trim().toLowerCase()
     result = result.filter((row) =>
       props.columns.some((col) => {
         const val = getNestedValue(row, col.key)
         if (val == null) return false
-        return String(val).toLowerCase().includes(q)
+        return String(val).toLowerCase().includes(q) // each the value of each column to see if it contains the search query
       }),
     )
   }
 
+  //column filters
   props.columns.forEach((col) => {
-    const filterVal = (filterInputs.value[col.key] || '').trim().toLowerCase()
+    const filterVal = (filterInputs.value[col.key] || '').trim().toLowerCase() //Gets filter for column, if filter is applied on the column
     if (!filterVal) return
     result = result.filter((row) => {
       const val = getNestedValue(row, col.key)
       if (val == null) return false
       if (col.searchFormat) {
-        return col.searchFormat(val, row).toLowerCase().includes(filterVal)
+        return col.searchFormat(val, row).toLowerCase().includes(filterVal) //If a column has a searchFormat function, use that to get the value to search against
       }
-      return String(val).toLowerCase().includes(filterVal)
+      return String(val).toLowerCase().includes(filterVal) //Default string check
     })
   })
 
@@ -82,7 +84,7 @@ const filteredRows = computed(() => {
 const sortedRows = computed(() => {
   if (!sortKey.value) return filteredRows.value
 
-  const col = props.columns.find((c) => c.key === sortKey.value)
+  const col = props.columns.find((c) => c.key === sortKey.value) //Find current sorted column
   const dir = sortDirection.value === 'asc' ? 1 : -1
 
   return [...filteredRows.value].sort((a, b) => {
@@ -90,26 +92,26 @@ const sortedRows = computed(() => {
     let bVal = getNestedValue(b, sortKey.value)
 
     if (col && col.sortValue) {
-      aVal = col.sortValue(aVal, a)
+      aVal = col.sortValue(aVal, a) //Custom function for getting the value to sort by, eg if a value is $100, you might want to sort by 100 instead of the string '$100'
       bVal = col.sortValue(bVal, b)
     }
 
-    if (aVal == null && bVal == null) return 0
-    if (aVal == null) return 1
-    if (bVal == null) return -1
+    if (aVal == null && bVal == null) return 0 //Both null, equal
+    if (aVal == null) return 1 //A after B
+    if (bVal == null) return -1 //B after A
 
     if (typeof aVal === 'number' && typeof bVal === 'number') {
-      return (aVal - bVal) * dir
+      return (aVal - bVal) * dir //If both are numbers, sort numerically based on current direction
     }
 
-    return String(aVal).localeCompare(String(bVal)) * dir
+    return String(aVal).localeCompare(String(bVal)) * dir //Otherwise, sort as strings + Current direction
   })
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(sortedRows.value.length / props.pageSize)))
 
 watch(
-  [filteredRows, totalPages],
+  [filteredRows, totalPages], // If a filter is applied and the number of rows changes, ensure that the current page is still valid
   () => {
     if (currentPage.value > totalPages.value) {
       currentPage.value = totalPages.value
@@ -117,8 +119,8 @@ watch(
   },
 )
 
-const pagedRows = computed(() => {
-  const start = (currentPage.value - 1) * props.pageSize
+const pagedRows = computed(() => { //Pagination calculation
+  const start = (currentPage.value - 1) * props.pageSize //Start value of data for rows
   return sortedRows.value.slice(start, start + props.pageSize)
 })
 
@@ -126,7 +128,7 @@ const rangeStart = computed(() =>
   sortedRows.value.length === 0 ? 0 : (currentPage.value - 1) * props.pageSize + 1,
 )
 const rangeEnd = computed(() =>
-  Math.min(currentPage.value * props.pageSize, sortedRows.value.length),
+  Math.min(currentPage.value * props.pageSize, sortedRows.value.length), //Either full page value, or however many rows are left if on the last page
 )
 
 const pageNumbers = computed(() => {
@@ -144,7 +146,7 @@ const pageNumbers = computed(() => {
   return pages
 })
 
-function toggleSort(key) {
+function toggleSort(key) { //Checks a columns been selected and changes direction or sets column and sorts default to ascending
   if (sortKey.value === key) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
   } else {
@@ -178,7 +180,7 @@ function exportName(suffix) {
 }
 
 async function handleExportCsv() {
-  if (exportBusy.value) return
+  if (exportBusy.value) return // Prevent multiple exports at once
   if (sortedRows.value.length === 0) {
     emit('export-error', 'No rows to export.')
     return
@@ -199,6 +201,7 @@ async function handleExportCsv() {
 }
 
 async function handleExportPdf() {
+  // Prevent multiple exports at once
   if (exportBusy.value) return
   if (sortedRows.value.length === 0) {
     emit('export-error', 'No rows to export.')
@@ -231,17 +234,21 @@ async function handleExportPdf() {
 <template>
   <div class="data-table">
     <div class="data-table__toolbar">
+
+      //Global Search
       <label class="data-table__search-label" for="dt-global-search">
         <span class="sr-only">Search all columns</span>
         <input
           id="dt-global-search"
           type="search"
           class="data-table__search-input"
-          placeholder="Search\u2026"
+          placeholder="Search ..."
           :value="globalSearch"
           @input="handleGlobalSearch($event.target.value)"
         />
       </label>
+
+      //Export buttons
       <div class="data-table__export" aria-label="Export data">
         <button
           type="button"
@@ -262,6 +269,7 @@ async function handleExportPdf() {
       </div>
     </div>
 
+    //Shows export message if an export has been completed or failed
     <p
       v-if="exportMessage"
       role="status"
@@ -274,7 +282,10 @@ async function handleExportPdf() {
     <div class="data-table__wrapper">
       <table class="data-table__table">
         <caption v-if="caption" class="sr-only">{{ caption }}</caption>
+
+        //Table header / Column definitions
         <thead class="data-table__head">
+
           <tr>
             <th
               v-for="col in columns"
@@ -283,11 +294,11 @@ async function handleExportPdf() {
               :class="[
                 'data-table__th',
                 {
-                  'data-table__th--sortable': col.sortable !== false,
-                  'data-table__th--sorted': sortKey === col.key,
+                  'data-table__th--sortable': col.sortable !== false, //Add sort class if column is sortable, default is true
+                  'data-table__th--sorted': sortKey === col.key, //Add sorted class if this column is currently being sorted
                 },
               ]"
-              :aria-sort="
+              :aria-sort=" //Render current sorting state
                 sortKey === col.key
                   ? sortDirection === 'asc'
                     ? 'ascending'
@@ -295,7 +306,7 @@ async function handleExportPdf() {
                   : 'none'
               "
             >
-              <template v-if="col.sortable !== false">
+              <template v-if="col.sortable !== false"> //Render sort button if column is sortable, default is true
                 <button
                   type="button"
                   class="data-table__th-button"
@@ -309,27 +320,29 @@ async function handleExportPdf() {
                   @click="toggleSort(col.key)"
                 >
                   <span class="data-table__th-content">
-                    <span>{{ col.label }}</span>
+                    <span>{{ col.label }}</span> //Column name
                     <span v-if="sortKey === col.key" class="data-table__sort-icon" aria-hidden="true">
-                      {{ sortDirection === 'asc' ? '\u25B2' : '\u25BC' }}
+                      {{ sortDirection === 'asc' ? '\u25B2' : '\u25BC' }} //Sort direction arrow
                     </span>
                     <span
                       v-else
                       class="data-table__sort-icon data-table__sort-icon--idle"
                       aria-hidden="true"
                     >
-                      &#8693;
+                      &#8693; //Idle sort icon (HTML character for up/down arrow)
                     </span>
                   </span>
                 </button>
               </template>
-              <template v-else>
+              <template v-else> //Not sortable, just render the column name
                 <div class="data-table__th-content">
                   <span>{{ col.label }}</span>
                 </div>
               </template>
             </th>
           </tr>
+
+          //Column filter row (text filters)
           <tr class="data-table__filter-row">
             <th
               v-for="col in columns"
@@ -351,44 +364,57 @@ async function handleExportPdf() {
               />
             </th>
           </tr>
+
         </thead>
+
+        //Actual table body, renders rows and cells based on the current page of data
         <tbody class="data-table__body">
+          //Empty case
           <tr v-if="pagedRows.length === 0">
             <td :colspan="columns.length" class="data-table__empty">
               {{ emptyMessage }}
             </td>
           </tr>
+
           <tr v-for="row in pagedRows" :key="row[rowKey]" class="data-table__row">
             <td
               v-for="col in columns"
               :key="col.key"
               class="data-table__td"
             >
+            //Apply custom cell rendering if slot is provided for the column ++ Also where custom functions for rows are supplied (eg edit delete)
               <slot
                 v-if="$slots[`cell-${col.key}`]"
                 :name="`cell-${col.key}`"
                 :row="row"
                 :value="getNestedValue(row, col.key)"
               />
-              <template v-else>
-                <span
-                  v-if="col.cellClass"
+              <template v-else> // Default when no custom rendering
+                //Custom cell class if provided, otherwise just render the text
+                <span 
+                  v-if="col.cellClass" 
                   :class="col.cellClass(getNestedValue(row, col.key), row)"
                 >
                   {{ cellText(row, col) }}
                 </span>
-                <template v-else>{{ cellText(row, col) }}</template>
+                <template v-else>{{ cellText(row, col) }}</template> //Default just display text
               </template>
             </td>
           </tr>
         </tbody>
+
       </table>
     </div>
 
+    //Footer information and pagination controls
     <div class="data-table__footer">
+
+      //Row count information
       <p class="data-table__info" aria-live="polite">
         Showing {{ rangeStart }}&ndash;{{ rangeEnd }} of {{ sortedRows.length }}
       </p>
+
+      //Pagination controls
       <nav class="data-table__pagination" aria-label="Table pagination">
         <button
           type="button"
