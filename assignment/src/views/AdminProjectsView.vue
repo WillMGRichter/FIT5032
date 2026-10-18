@@ -208,6 +208,7 @@ onMounted(() => {
         export-base-name="greenlink-projects"
         export-title="GreenLink Projects"
       >
+        // Custom cell for the project title (renders through slots takes user to details page)
         <template #cell-title="{ row }">
           <RouterLink
             :to="{ name: 'project-details', params: { id: row.id } }"
@@ -216,6 +217,8 @@ onMounted(() => {
             {{ row.title }}
           </RouterLink>
         </template>
+
+        //Custom cell actions rendered through slots inside data table
         <template #cell-_actions="{ row }">
           <div class="admin-projects__actions">
             <RouterLink
