@@ -1,3 +1,6 @@
+// BR (D.1) External Authentication:
+// BR (E.2) Geo Location:
+// BR (F.1) Innovation:
 const pool = require('../config/db')
 
 function mapRow(row) {

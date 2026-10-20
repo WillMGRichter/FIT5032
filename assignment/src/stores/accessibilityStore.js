@@ -1,3 +1,4 @@
+// BR (E.3) Accessibility:
 import { reactive, watch } from 'vue'
 
 const STORAGE_KEY = 'greenlink:accessibility'

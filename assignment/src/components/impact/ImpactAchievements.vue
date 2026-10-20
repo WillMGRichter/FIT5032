@@ -1,3 +1,4 @@
+<!-- BR (F.1) Innovation: -->
 <script setup>
 defineProps({
   achievements: { type: Array, default: () => [] },

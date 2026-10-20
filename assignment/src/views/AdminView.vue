@@ -1,3 +1,4 @@
+<!-- BR (D.2) Email: -->
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'

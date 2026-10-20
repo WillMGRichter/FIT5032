@@ -1,3 +1,4 @@
+<!-- BR (E.3) Accessibility: -->
 <script setup>
 import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useAccessibilityStore } from '@/stores/accessibilityStore'

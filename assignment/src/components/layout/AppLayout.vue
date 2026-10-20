@@ -1,3 +1,4 @@
+<!-- BR (E.3) Accessibility: -->
 <script setup>
 import AppNavbar from '@/components/navigation/AppNavbar.vue'
 import AppFooter from '@/components/navigation/AppFooter.vue'

@@ -1,3 +1,5 @@
+// BR (D.1) External Authentication:
+// BR (E.1) Cloud Functions:
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFunctions } from 'firebase/functions'

@@ -1,3 +1,4 @@
+<!-- BR (D.1) External Authentication: -->
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

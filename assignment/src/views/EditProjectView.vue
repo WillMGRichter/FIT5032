@@ -1,3 +1,4 @@
+<!-- BR (E.2) Geo Location: -->
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

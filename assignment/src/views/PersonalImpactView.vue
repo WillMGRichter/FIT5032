@@ -1,3 +1,4 @@
+<!-- BR (F.1) Innovation: -->
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import ImpactMetricCard from '@/components/impact/ImpactMetricCard.vue'

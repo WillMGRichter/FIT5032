@@ -1,3 +1,4 @@
+// BR (E.1) Cloud Functions:
 const ACTIVATED_TITLE = 'Project started'
 const COMPLETED_TITLE = 'Project completed'
 

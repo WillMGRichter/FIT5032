@@ -1,3 +1,5 @@
+<!-- BR (D.3) Interactive Table Data: -->
+<!-- BR (E.4) Export: -->
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import ImpactMetricCard from '@/components/impact/ImpactMetricCard.vue'

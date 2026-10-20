@@ -1,3 +1,6 @@
+// BR (D.4) Deployment to the Cloud:
+// BR (E.2) Geo Location:
+// BR (F.1) Innovation:
 require('dotenv').config()
 const { readFileSync } = require('node:fs')
 const path = require('node:path')

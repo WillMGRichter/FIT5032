@@ -1,3 +1,4 @@
+<!-- BR (F.1) Innovation: -->
 <script setup>
 import { computed } from 'vue'
 import ImpactChart from '@/components/impact/ImpactChart.vue'

@@ -1,3 +1,5 @@
+// BR (D.4) Deployment to the Cloud:
+// BR (E.1) Cloud Functions:
 const { Pool } = require('pg')
 
 let pool = null

@@ -1,3 +1,4 @@
+// BR (D.1) External Authentication:
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 

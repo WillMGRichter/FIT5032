@@ -1,3 +1,4 @@
+<!-- BR (F.1) Innovation: -->
 <script setup>
 import { reactive, ref, computed, onMounted, nextTick } from 'vue'
 import { formatDate } from '@/utils/formatDate'

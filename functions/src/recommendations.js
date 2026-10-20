@@ -1,3 +1,6 @@
+// BR (E.1) Cloud Functions:
+// BR (E.2) Geo Location:
+// BR (F.1) Innovation:
 const INTERESTS = [
   { id: 'urban-greening', label: 'Urban Greening' },
   { id: 'biodiversity', label: 'Biodiversity' },

@@ -1,3 +1,4 @@
+<!-- BR (E.4) Export: -->
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import PlantCard from '@/components/plant/PlantCard.vue'

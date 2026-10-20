@@ -1,3 +1,5 @@
+// BR (D.2) Email:
+// BR (E.1) Cloud Functions:
 const crypto = require('node:crypto')
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

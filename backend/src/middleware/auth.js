@@ -1,3 +1,4 @@
+// BR (D.1) External Authentication:
 const fs = require("fs");
 const path = require("path");
 const { initializeApp, cert } = require("firebase-admin/app");

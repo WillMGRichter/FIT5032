@@ -1,3 +1,7 @@
+// BR (D.2) Email:
+// BR (D.4) Deployment to the Cloud:
+// BR (E.1) Cloud Functions:
+// BR (F.1) Innovation:
 const { onRequest, onCall, HttpsError } = require('firebase-functions/v2/https')
 const { onSchedule } = require('firebase-functions/v2/scheduler')
 const { defineSecret } = require('firebase-functions/params')

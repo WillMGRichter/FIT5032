@@ -1,3 +1,6 @@
+<!-- BR (D.3) Interactive Table Data: -->
+<!-- BR (E.4) Export: -->
+<!-- BR (F.1) Innovation: -->
 <script setup>
 import { computed, ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'

@@ -1,3 +1,6 @@
+// BR (D.1) External Authentication:
+// BR (D.4) Deployment to the Cloud:
+// BR (F.1) Innovation:
 require('dotenv').config()
 const { Pool } = require('pg')
 

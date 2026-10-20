@@ -1,3 +1,4 @@
+// BR (D.1) External Authentication:
 const express = require('express')
 const authController = require('../controllers/authController')
 const { requireAuth } = require('../middleware/auth')

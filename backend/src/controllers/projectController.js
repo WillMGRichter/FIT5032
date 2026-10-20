@@ -1,3 +1,4 @@
+// BR (E.2) Geo Location:
 const projectService = require('../services/projectService')
 
 async function getProjects(req, res, next) {

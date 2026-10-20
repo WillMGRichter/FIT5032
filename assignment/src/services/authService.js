@@ -1,3 +1,5 @@
+// BR (D.1) External Authentication:
+// BR (F.1) Innovation:
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,

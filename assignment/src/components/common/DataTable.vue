@@ -1,3 +1,5 @@
+<!-- BR (D.3) Interactive Table Data: -->
+<!-- BR (E.4) Export: -->
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { exportCSV, exportPDF, dateStamp } from '@/services/exportService'

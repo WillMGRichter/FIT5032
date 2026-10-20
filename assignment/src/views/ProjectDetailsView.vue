@@ -1,3 +1,6 @@
+<!-- BR (D.2) Email: -->
+<!-- BR (E.2) Geo Location: -->
+<!-- BR (F.1) Innovation: -->
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

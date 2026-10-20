@@ -1,3 +1,4 @@
+<!-- BR (F.1) Innovation: -->
 <script setup>
 import { useAuthStore } from '@/stores/authStore'
 import HeroSection from '@/components/home/HeroSection.vue'

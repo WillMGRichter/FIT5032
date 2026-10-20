@@ -1,3 +1,4 @@
+// BR (E.2) Geo Location:
 const pool = require('../config/db')
 
 function mapRow(row) {

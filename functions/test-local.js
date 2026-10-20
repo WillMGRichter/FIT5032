@@ -1,3 +1,5 @@
+// BR (D.2) Email:
+// BR (E.1) Cloud Functions:
 const assert = require('node:assert')
 const lib = require('./src/lib')
 

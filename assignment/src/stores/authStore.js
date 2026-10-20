@@ -1,3 +1,4 @@
+// BR (D.1) External Authentication:
 import { computed, reactive } from 'vue'
 import * as authService from '@/services/authService'
 import * as notificationService from '@/services/notificationService'

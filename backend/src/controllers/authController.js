@@ -1,3 +1,5 @@
+// BR (D.1) External Authentication:
+// BR (F.1) Innovation:
 const authService = require('../services/authService')
 const projectService = require('../services/projectService')
 const ratingModel = require('../models/ratingModel')

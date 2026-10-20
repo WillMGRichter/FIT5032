@@ -1,3 +1,4 @@
+// BR (E.2) Geo Location:
 export const projects = [
   {
     id: 'prj-001',

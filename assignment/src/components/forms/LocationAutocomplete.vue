@@ -1,3 +1,4 @@
+<!-- BR (E.2) Geo Location: -->
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import FormError from './FormError.vue'

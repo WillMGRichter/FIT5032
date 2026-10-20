@@ -1,3 +1,4 @@
+<!-- BR (F.1) Innovation: -->
 <script setup>
 import { ref } from 'vue'
 import { INTERESTS } from '@/services/recommendationService'

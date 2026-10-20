@@ -1,3 +1,4 @@
+// BR (D.2) Email:
 const pool = require('../config/db')
 const emailService = require('../services/emailService')
 const { buildAttachment } = emailService

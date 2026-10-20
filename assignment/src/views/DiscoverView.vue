@@ -1,3 +1,5 @@
+<!-- BR (E.2) Geo Location: -->
+<!-- BR (E.4) Export: -->
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import ProjectCard from '@/components/project/ProjectCard.vue'

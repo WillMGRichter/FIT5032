@@ -1,3 +1,4 @@
+<!-- BR (D.2) Email: -->
 <script setup>
 import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import FormInput from '@/components/forms/FormInput.vue'

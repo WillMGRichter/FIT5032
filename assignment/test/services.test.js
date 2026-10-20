@@ -1,3 +1,6 @@
+// BR (E.2) Geo Location:
+// BR (E.4) Export:
+// BR (F.1) Innovation:
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { getRecommendedProjects } from '../src/services/recommendationService.js'

@@ -1,3 +1,5 @@
+// BR (E.2) Geo Location:
+// BR (F.1) Innovation:
 import { httpsCallable } from 'firebase/functions'
 import { auth, functions } from './firebase'
 

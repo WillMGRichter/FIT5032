@@ -1,3 +1,4 @@
+<!-- BR (D.1) External Authentication: -->
 <script setup>
 import { ref } from 'vue'
 import FormInput from '@/components/forms/FormInput.vue'
