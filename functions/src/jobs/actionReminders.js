@@ -1,9 +1,11 @@
 const REMINDER_TITLE = 'Action due tomorrow'
 
+// Formats a date as YYYY-MM-DD.
 function utcDateString(date = new Date()) {
   return date.toISOString().slice(0, 10)
 }
 
+// Adds notifications for actions due the next day.
 async function runActionReminders({ query, today = utcDateString(), token = null } = {}) {
   if (typeof query !== 'function') throw new Error('runActionReminders requires a query function')
 
@@ -46,6 +48,7 @@ async function runActionReminders({ query, today = utcDateString(), token = null
          WHERE n.user_id = v.user_id::bigint
            AND n.title = v.title::varchar
            AND n.message = v.message::text
+           -- Skip reminders already created in this run.
            AND n.created_at >= $1::timestamptz
       )`,
     params,

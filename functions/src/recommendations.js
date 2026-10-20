@@ -37,14 +37,17 @@ const INTEREST_MAP = {
 const STOPWORDS = new Set(['and', 'the', 'of', 'for', 'a', 'an', 'at', 'in', 'on', 'to', 'park', 'reserve'])
 const AVAILABLE_STATUSES = new Set(['planned', 'active'])
 
+// Normalizes text for matching.
 function normalize(text) {
   return String(text ?? '').toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').trim()
 }
 
+// Splits normalized text into words.
 function wordsOf(text) {
   return normalize(text).split(/\s+/).filter(Boolean)
 }
 
+// Calculates distance between two coordinates.
 function haversineKm(latA, lngA, latB, lngB) {
   const toRad = (deg) => (deg * Math.PI) / 180
   const R = 6371
@@ -56,15 +59,18 @@ function haversineKm(latA, lngA, latB, lngB) {
   return 2 * R * Math.asin(Math.sqrt(a))
 }
 
+// Gets useful words from a location.
 function locationTokens(location) {
   return wordsOf(location).filter((word) => word.length > 3 && !STOPWORDS.has(word))
 }
 
+// Counts shared location words.
 function sharedTokenCount(a, b) {
   const setB = new Set(b)
   return new Set(a).size === 0 ? 0 : a.reduce((count, token) => (setB.has(token) ? count + 1 : count), 0)
 }
 
+// Finds the nearest past project.
 function nearestDistanceKm(project, historyProjects) {
   let nearest = null
   for (const prior of historyProjects) {
@@ -76,6 +82,7 @@ function nearestDistanceKm(project, historyProjects) {
   return nearest
 }
 
+// Scores project matches to selected interests.
 function interestPoints(project, interestIds) {
   let points = 0
   const matched = []
@@ -98,12 +105,14 @@ function interestPoints(project, interestIds) {
   return { points: Math.min(points, 2.5), matched: uniqueLabels }
 }
 
+// Scores categories from past projects.
 function categoryMatchPoints(project, history) {
   const sameCategory = history.filter((p) => p.categoryId === project.categoryId)
   if (sameCategory.length === 0) return { points: 0, count: 0 }
   return { points: Math.min(2, 0.75 + 0.35 * (sameCategory.length - 1)), count: sameCategory.length }
 }
 
+// Scores projects near past participation.
 function participationSimilarityPoints(project, history) {
   const nearest = nearestDistanceKm(project, history)
   if (nearest === null) return { points: 0, km: null, title: null }
@@ -113,6 +122,7 @@ function participationSimilarityPoints(project, history) {
   return { points: 0, km: nearest, title: null }
 }
 
+// Scores a match to the user's location.
 function locationRelevancePoints(project, userLocation) {
   if (!userLocation) return { points: 0, matched: false }
   const projectTokens = locationTokens(project.location)
@@ -121,6 +131,7 @@ function locationRelevancePoints(project, userLocation) {
   return { points: shared > 0 ? 0.75 : 0, matched: shared > 0 }
 }
 
+// Scores project ratings.
 function qualityPoints(project) {
   const avg = Number(project.avgRating) || 0
   const count = Number(project.ratingCount) || 0
@@ -129,6 +140,7 @@ function qualityPoints(project) {
   return { points: Math.min(1, (avg / 5) * (0.5 + 0.5 * confidence)), avg, count }
 }
 
+// Scores project availability.
 function availabilityPoints(project) {
   if (project.status === 'active') return { points: 1, label: 'Active — open for participants' }
   if (project.status === 'planned') return { points: 0.9, label: 'Planned — joining soon' }
@@ -136,10 +148,12 @@ function availabilityPoints(project) {
   return { points: 0, label: null }
 }
 
+// Rounds a score to one decimal place.
 function round1(value) {
   return Math.round(value * 10) / 10
 }
 
+// Builds the reasons shown with a recommendation.
 function buildReasons(result) {
   const reasons = []
   if (result.interest.matched.length > 0) {
@@ -166,6 +180,7 @@ function buildReasons(result) {
   return reasons
 }
 
+// Scores a project using the user's history and interests.
 function personalizedScore(project, ctx) {
   const interest = interestPoints(project, ctx.interestIds)
   const category = categoryMatchPoints(project, ctx.history)
@@ -174,6 +189,7 @@ function personalizedScore(project, ctx) {
   const quality = qualityPoints(project)
   const availability = availabilityPoints(project)
 
+  // Limit location's scoring influence.
   const locationPoints = Math.min(1.5, participation.points + location.points)
   const score = round1(
     interest.points + category.points + locationPoints + quality.points + availability.points,
@@ -201,6 +217,7 @@ function personalizedScore(project, ctx) {
   }
 }
 
+// Scores projects when personal history is unavailable.
 function fallbackScore(project) {
   const avg = Number(project.avgRating) || 0
   const count = Number(project.ratingCount) || 0
@@ -234,11 +251,13 @@ function fallbackScore(project) {
   }
 }
 
+// Orders recommendations by score and project ID.
 function sortKey(a, b) {
   if (a.score !== b.score) return b.score - a.score
   return a.project.id - b.project.id
 }
 
+// Builds ranked recommendations for one user.
 function buildRecommendations(user, projects, participation = {}, options = {}) {
   const limit = options.limit ?? 5
   const all = Array.isArray(projects) ? projects : []
@@ -269,6 +288,7 @@ function buildRecommendations(user, projects, participation = {}, options = {}) 
   let scored
   if (hasPersonalisation) {
     const ctx = { interestIds, history, userLocation }
+    // Filter out weak personal matches.
     scored = candidates
       .map((project) => personalizedScore(project, ctx))
       .filter((item) => item.score >= 1.9 || item.causes.categoryCount > 0 || item.causes.interest.length > 0)
@@ -299,6 +319,7 @@ function buildRecommendations(user, projects, participation = {}, options = {}) 
   return scored
 }
 
+// Converts a project database row for scoring.
 function mapProjectRow(row) {
   return {
     id: row.id,
@@ -320,6 +341,7 @@ function mapProjectRow(row) {
   }
 }
 
+// Converts participation history for scoring.
 function mapHistoryRow(row) {
   return {
     id: row.id,
@@ -329,6 +351,7 @@ function mapHistoryRow(row) {
   }
 }
 
+// Loads a user's data and builds recommendations.
 async function getRecommendationsForUser({ query, uid, limit = 5 } = {}) {
   if (typeof query !== 'function') throw new Error('getRecommendationsForUser requires a query function')
   if (!uid) return []

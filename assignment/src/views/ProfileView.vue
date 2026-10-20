@@ -45,6 +45,7 @@ const errors = reactive({
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+// Copies profile values into the edit form.
 function populateForm(user) {
   form.firstName = user.firstName ?? ''
   form.lastName = user.lastName ?? ''
@@ -54,6 +55,7 @@ function populateForm(user) {
   form.profileImage = user.profileImage ?? ''
 }
 
+// Loads the profile and project activity.
 async function loadPage() {
   isLoading.value = true
   loadError.value = null
@@ -72,12 +74,14 @@ async function loadPage() {
 
 onMounted(loadPage)
 
+// Builds the profile avatar initials.
 const initials = computed(() => {
   const first = profile.value?.firstName?.charAt(0) ?? ''
   const last = profile.value?.lastName?.charAt(0) ?? ''
   return `${first}${last}`.toUpperCase() || '?'
 })
 
+// Summarizes joined project progress.
 const joinedSummary = computed(() => {
   const joined = activity.value.joined ?? []
   return {
@@ -86,6 +90,7 @@ const joinedSummary = computed(() => {
   }
 })
 
+// Validates one profile field.
 function validateField(field) {
   switch (field) {
     case 'firstName':
@@ -126,6 +131,7 @@ function validateField(field) {
   }
 }
 
+// Updates a profile field.
 function onFieldUpdate({ field, value }) {
   form[field] = value
   validateField(field)
@@ -133,11 +139,13 @@ function onFieldUpdate({ field, value }) {
   isSuccess.value = false
 }
 
+// Opens the profile edit form.
 function startEditing() {
   isSuccess.value = false
   isEditing.value = true
 }
 
+// Restores the saved profile values.
 function cancelEditing() {
   if (isSubmitting.value) return
   populateForm(profile.value)
@@ -146,11 +154,13 @@ function cancelEditing() {
   isEditing.value = false
 }
 
+// Signs out and returns home.
 async function handleLogout() {
   await authStore.logout()
   router.push({ name: 'home' })
 }
 
+// Validates and saves profile changes.
 async function handleSubmit() {
   if (isSubmitting.value) return
 
@@ -197,6 +207,7 @@ async function handleSubmit() {
 
 const todayIso = new Date().toISOString().slice(0, 10)
 
+// Groups joined projects by status.
 const groupedJoined = computed(() => {
   const upcoming = []
   const active = []
@@ -219,17 +230,21 @@ const groupedJoined = computed(() => {
   return { upcoming, active, completed, cancelled }
 })
 
+// Finds the next upcoming joined project.
 const nextProject = computed(() => {
   const all = [...groupedJoined.value.upcoming, ...groupedJoined.value.active]
   return all.find((p) => (p.endDate ?? '') >= todayIso) ?? null
 })
 
+// Checks whether the user has joined projects.
 const hasJoinedProjects = computed(() => activity.value.joined.length > 0)
 
+// Checks whether a project can be left.
 function canLeave(project) {
   return ['planned', 'active'].includes(project.status)
 }
 
+// Leaves a project and refreshes its participant count.
 async function handleLeave(project) {
   if (leaveBusyId.value) return
   const confirmed = window.confirm(
@@ -258,12 +273,15 @@ async function handleLeave(project) {
 </script>
 
 <template>
+  <!-- Profile page -->
   <section class="profile" aria-labelledby="profile-heading">
+    <!-- Profile title -->
     <header class="profile__header">
       <h1 id="profile-heading">My Profile</h1>
       <p class="profile__intro">Your account details and GreenLink activity.</p>
     </header>
 
+    <!-- Loading and error states -->
     <p v-if="isLoading" class="profile__state">Loading your profile&hellip;</p>
 
     <div v-else-if="loadError" role="alert" class="profile__state profile__state--error">
@@ -275,6 +293,7 @@ async function handleLeave(project) {
     <template v-else>
       <div v-if="isSuccess" role="status" class="profile__success">Changes saved.</div>
 
+      <!-- Project impact summary -->
       <div class="impact-summary-card">
         <div>
           <h2>Your GreenLink Impact</h2>
@@ -290,6 +309,7 @@ async function handleLeave(project) {
         </RouterLink>
       </div>
 
+      <!-- Profile details or edit form -->
       <article v-if="!isEditing" class="profile-card">
         <div class="profile-card__identity">
           <img
@@ -333,6 +353,7 @@ async function handleLeave(project) {
         </dl>
       </article>
 
+      <!-- Profile edit form -->
       <form v-else class="profile-edit" novalidate @submit.prevent="handleSubmit">
         <ProfileForm
           :profile="form"
@@ -351,6 +372,7 @@ async function handleLeave(project) {
         </div>
       </form>
 
+      <!-- Recommendation preferences -->
       <section class="interests-section" aria-labelledby="interests-heading">
         <div class="interests-section__card">
           <h2 id="interests-heading">Recommendation preferences</h2>
@@ -361,6 +383,7 @@ async function handleLeave(project) {
         </div>
       </section>
 
+      <!-- Projects created by the user -->
       <section class="activity" aria-labelledby="activity-created-title">
         <h2 id="activity-created-title">Projects you've created</h2>
         <ul v-if="activity.created.length > 0" class="activity__list">
@@ -394,6 +417,7 @@ async function handleLeave(project) {
         </p>
       </section>
 
+      <!-- Projects joined by the user -->
       <section class="activity" aria-labelledby="activity-joined-title">
         <h2 id="activity-joined-title">My Projects</h2>
 

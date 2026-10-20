@@ -1,14 +1,17 @@
 const ACTIVATED_TITLE = 'Project started'
 const COMPLETED_TITLE = 'Project completed'
 
+// Formats a date as YYYY-MM-DD.
 function utcDateString(date = new Date()) {
   return date.toISOString().slice(0, 10)
 }
 
+// Builds a project details link.
 function projectLink(projectId) {
   return `/projects/${projectId}`
 }
 
+// Collects participants and creator for notifications.
 function buildRecipientIds(projectId, participantRows, creatorId) {
   const ids = new Set()
   for (const row of participantRows) {
@@ -18,6 +21,7 @@ function buildRecipientIds(projectId, participantRows, creatorId) {
   return [...ids]
 }
 
+// Builds project lifecycle notifications.
 function buildNotifications(project, userIds, kind) {
   const isActivated = kind === 'active'
   const title = isActivated ? ACTIVATED_TITLE : COMPLETED_TITLE
@@ -28,6 +32,7 @@ function buildNotifications(project, userIds, kind) {
   return userIds.map((userId) => ({ userId, title, message, link }))
 }
 
+// Saves notifications without duplicating a run.
 async function insertNotifications(query, items, token) {
   const pending = items.filter((item) => item)
   if (!pending.length) return 0
@@ -50,6 +55,7 @@ async function insertNotifications(query, items, token) {
          WHERE n.user_id = v.user_id
            AND n.title = v.title
            AND n.message = v.message
+           -- Prevent duplicate notices in one run.
            AND n.created_at >= $1::timestamptz
       )`,
     params,
@@ -58,6 +64,7 @@ async function insertNotifications(query, items, token) {
   return pending.length
 }
 
+// Notifies users connected to a project.
 async function notifyForProject(query, project, kind, token) {
   const { rows } = await query(
     'SELECT user_id FROM project_participations WHERE project_id = $1',
@@ -67,6 +74,7 @@ async function notifyForProject(query, project, kind, token) {
   return insertNotifications(query, buildNotifications(project, userIds, kind), token)
 }
 
+// Updates project status and sends lifecycle notices.
 async function runProjectLifecycle({ query, today = utcDateString(), token = null } = {}) {
   if (typeof query !== 'function') throw new Error('runProjectLifecycle requires a query function')
 

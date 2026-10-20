@@ -48,6 +48,7 @@ const ALLOWED_MIME_TYPES = [
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+// Creates an email service error.
 function serviceError(status, message, code = null, details = null) {
   const error = new Error(message)
   error.status = status
@@ -199,10 +200,12 @@ async function sendMail({ kind, recipients, subject, message, attachments = [], 
   }
 }
 
+// Sends email to project participants.
 async function sendProjectEmail({ projectId, recipients, subject, message, attachments = [], user }) {
   return sendMail({ kind: 'project', recipients, subject, message, attachments, user })
 }
 
+// Sends email to broadcast recipients.
 async function sendBroadcastEmail({ recipients, subject, message, attachments = [], user }) {
   return sendMail({ kind: 'broadcast', recipients, subject, message, attachments, user })
 }
@@ -271,10 +274,12 @@ function canonicalCore(payload) {
   }
 }
 
+// Converts the signed fields to JSON.
 function canonicalBody(payload) {
   return JSON.stringify(canonicalCore(payload))
 }
 
+// Signs the canonical email request.
 function sign(secret, payload) {
   if (!secret) throw serviceError(503, 'Email signing secret is not configured.')
   return crypto.createHmac('sha256', secret).update(canonicalBody(payload)).digest('base64')

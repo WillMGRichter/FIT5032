@@ -20,40 +20,49 @@ const toggles = [
   { key: 'reduceMotion', label: 'Reduce motion' },
 ]
 
+// Opens the options panel.
 async function open() {
   isOpen.value = true
   await nextTick()
+  // Move focus into the panel.
   panelRef.value?.querySelector('input, button')?.focus()
 }
 
+// Closes the options panel.
 function close({ restoreFocus = true } = {}) {
   isOpen.value = false
   if (restoreFocus) triggerRef.value?.focus()
 }
 
+// Toggles the options panel.
 function toggleOpen() {
   if (isOpen.value) close()
   else open()
 }
 
+// Closes the panel when Escape is pressed.
 function handleKeydown(event) {
   if (event.key === 'Escape' && isOpen.value) {
     close()
   }
 }
 
+// Closes the panel after an outside click.
 function handlePointerDown(event) {
   if (!isOpen.value) return
   const target = event.target
   if (panelRef.value?.contains(target) || triggerRef.value?.contains(target)) return
+  // Leave focus alone after an outside click.
   close({ restoreFocus: false })
 }
 
+// Listen for keyboard and outside-click dismissal.
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
   document.addEventListener('mousedown', handlePointerDown)
 })
 
+// Remove the page listeners when the widget is removed.
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeydown)
   document.removeEventListener('mousedown', handlePointerDown)
@@ -62,6 +71,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="a11y-widget">
+    <!-- Accessibility settings panel -->
     <div
       v-if="isOpen"
       id="a11y-panel"
@@ -70,6 +80,7 @@ onBeforeUnmount(() => {
       role="dialog"
       aria-labelledby="a11y-title"
     >
+      <!-- Panel heading and close control -->
       <div class="a11y-panel__header">
         <h2 id="a11y-title" class="a11y-panel__title">Accessibility</h2>
         <button
@@ -94,6 +105,7 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
+      <!-- Text-size choices -->
       <fieldset class="a11y-group">
         <legend class="a11y-group__legend">Text size</legend>
         <div class="a11y-radios">
@@ -110,6 +122,7 @@ onBeforeUnmount(() => {
         </div>
       </fieldset>
 
+      <!-- Display settings -->
       <fieldset class="a11y-group">
         <legend class="a11y-group__legend">Display</legend>
         <div class="a11y-switches">
@@ -120,9 +133,11 @@ onBeforeUnmount(() => {
         </div>
       </fieldset>
 
+      <!-- Restore default settings -->
       <button type="button" class="a11y-reset" @click="reset">Reset to defaults</button>
     </div>
 
+    <!-- Opens the accessibility panel -->
     <button
       ref="triggerRef"
       type="button"

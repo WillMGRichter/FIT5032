@@ -16,12 +16,14 @@ const settings = reactive({
 
 let initialized = false
 
+// Loads saved accessibility settings.
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return
     const parsed = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return
+    // Ignore unsupported text sizes.
     if (['default', 'large', 'xlarge'].includes(parsed.textSize)) {
       settings.textSize = parsed.textSize
     }
@@ -33,6 +35,7 @@ function load() {
   }
 }
 
+// Saves accessibility settings.
 function persist() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...settings }))
@@ -41,8 +44,10 @@ function persist() {
   }
 }
 
+// Applies settings to the page.
 function apply() {
   const root = document.documentElement
+  // Apply preferences globally.
   Object.values(TEXT_SIZE_CLASSES).forEach((className) => root.classList.remove(className))
   if (TEXT_SIZE_CLASSES[settings.textSize]) {
     root.classList.add(TEXT_SIZE_CLASSES[settings.textSize])
@@ -52,27 +57,32 @@ function apply() {
   root.classList.toggle('a11y-reduce-motion', settings.reduceMotion)
 }
 
+// Initializes settings and change tracking.
 function init() {
   if (initialized) return
   initialized = true
   load()
   apply()
+  // Saves and applies later setting changes.
   watch(settings, () => {
     apply()
     persist()
   })
 }
 
+// Sets the page text size.
 function setTextSize(value) {
   if (['default', 'large', 'xlarge'].includes(value)) settings.textSize = value
 }
 
+// Toggles a display setting.
 function toggle(key) {
   if (key in settings && typeof settings[key] === 'boolean') {
     settings[key] = !settings[key]
   }
 }
 
+// Restores default accessibility settings.
 function reset() {
   settings.textSize = 'default'
   settings.highContrast = false
@@ -80,6 +90,7 @@ function reset() {
   settings.reduceMotion = false
 }
 
+// Exposes accessibility settings and actions.
 export function useAccessibilityStore() {
   return { settings, init, setTextSize, toggle, reset }
 }

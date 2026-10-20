@@ -17,6 +17,7 @@ const linkPassword = ref('')
 const linkError = ref('')
 const isLinking = ref(false)
 
+// Converts Firebase errors into sign-in messages.
 function friendlyError(err) {
   const map = {
     'auth/popup-closed-by-user': 'Sign-in was cancelled.',
@@ -33,6 +34,7 @@ function friendlyError(err) {
   return err?.message || 'Something went wrong while signing you in.'
 }
 
+// Starts Google sign-in.
 async function signInWithGoogle() {
   if (loadingProvider.value || conflict.value) return
   loadingProvider.value = 'google'
@@ -41,6 +43,7 @@ async function signInWithGoogle() {
     emit('success', user)
   } catch (err) {
     if (err?.code === 'auth/account-exists-with-different-credential' && err.pendingCredential) {
+      // Prompt for the existing account password.
       conflict.value = { email: err.email, pendingCredential: err.pendingCredential }
       linkPassword.value = ''
       linkError.value = ''
@@ -52,12 +55,14 @@ async function signInWithGoogle() {
   }
 }
 
+// Clears the account-linking form.
 function cancelLink() {
   conflict.value = null
   linkPassword.value = ''
   linkError.value = ''
 }
 
+// Links Google after the existing password is confirmed.
 async function handleLinkSubmit() {
   if (isLinking.value) return
   linkError.value = ''
@@ -94,6 +99,7 @@ async function handleLinkSubmit() {
 
 <template>
   <div class="social">
+    <!-- Existing account password form -->
     <template v-if="conflict">
       <div class="social__link">
         <h2 class="social__link-title">Link your Google account</h2>
@@ -127,6 +133,7 @@ async function handleLinkSubmit() {
       </div>
     </template>
 
+    <!-- Google sign-in button -->
     <template v-else>
       <div class="social__divider" role="presentation">
         <span>or continue with</span>

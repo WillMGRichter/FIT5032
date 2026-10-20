@@ -20,6 +20,7 @@ const isSubmitting = ref(false)
 const submitError = ref(null)
 const isSuccess = ref(false)
 
+// Loads category and plant options.
 async function loadFormData() {
   isLoading.value = true
   try {
@@ -33,6 +34,7 @@ async function loadFormData() {
   }
 }
 
+// Converts form values to a project request.
 function buildPayload() {
   return {
     title: form.title.trim(),
@@ -50,6 +52,7 @@ function buildPayload() {
   }
 }
 
+// Validates and creates the project.
 async function handleSubmit() {
   if (isSubmitting.value || isSuccess.value) return
 
@@ -81,6 +84,7 @@ async function handleSubmit() {
   }
 }
 
+// Updates a project form field.
 function onFieldUpdate({ field, value }) {
   form[field] = value
 }
@@ -89,7 +93,9 @@ loadFormData()
 </script>
 
 <template>
+  <!-- Create project page -->
   <section class="create" aria-labelledby="create-heading">
+    <!-- Page title and instructions -->
     <header class="create__header">
       <h1 id="create-heading">Create a Project</h1>
       <p class="create__intro">
@@ -98,11 +104,13 @@ loadFormData()
       </p>
     </header>
 
+    <!-- Project creation success -->
     <div v-if="isSuccess" role="status" class="create__success">
       <h2>Project created!</h2>
       <p>Taking you to your new project page&hellip;</p>
     </div>
 
+    <!-- Project fields and submit actions -->
     <form v-else class="create__form" novalidate @submit.prevent="handleSubmit">
       <ProjectFormFields
         :form="form"

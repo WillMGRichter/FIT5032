@@ -28,20 +28,24 @@ const errors = ref({})
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
 const ALLOWED_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.txt', '.csv', '.doc', '.docx', '.xls', '.xlsx']
 
+// Counts the selected email recipients.
 const recipientCount = computed(() => props.recipients.length)
 
 const modalRoot = ref(null)
 let previouslyFocused = null
 
+// Checks whether the email can be sent.
 const canSend = computed(
   () => subject.value.trim() && message.value.trim() && recipientCount.value > 0 && !isSending.value,
 )
 
+// Updates focus when the modal opens or closes.
 watch(
   () => props.visible,
   (open) => {
     if (open) {
       resetForm()
+      // Save focus so it can return to the opener.
       previouslyFocused = document.activeElement
       nextTick(() => {
         const firstField = modalRoot.value?.querySelector(
@@ -58,6 +62,7 @@ watch(
   },
 )
 
+// Handles keyboard navigation in the modal.
 function handleKeydown(event) {
   if (event.key === 'Escape') {
     event.preventDefault()
@@ -75,6 +80,7 @@ function handleKeydown(event) {
   const first = focusable[0]
   const last = focusable[focusable.length - 1]
 
+  // Keep keyboard focus inside the dialog.
   if (event.shiftKey && document.activeElement === first) {
     event.preventDefault()
     last.focus()
@@ -84,12 +90,14 @@ function handleKeydown(event) {
   }
 }
 
+// Returns focus when the modal is removed.
 onBeforeUnmount(() => {
   if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
     previouslyFocused.focus()
   }
 })
 
+// Clears the form when the modal opens.
 function resetForm() {
   subject.value = props.projectTitle ? `Update for "${props.projectTitle}"` : ''
   message.value = ''
@@ -100,6 +108,7 @@ function resetForm() {
   errors.value = {}
 }
 
+// Checks message and attachment fields.
 function validate() {
   const errs = {}
   if (!subject.value.trim()) {
@@ -125,6 +134,7 @@ function validate() {
   return Object.keys(errs).length === 0
 }
 
+// Stores the selected attachment.
 function handleAttachmentChange(event) {
   const file = event.target.files?.[0]
   if (file) {
@@ -136,21 +146,25 @@ function handleAttachmentChange(event) {
   }
 }
 
+// Removes the selected attachment.
 function removeAttachment() {
   attachment.value = null
   attachmentName.value = ''
 }
 
+// Formats a file size for display.
 function formatFileSize(bytes) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+// Closes the modal.
 function handleClose() {
   emit('close')
 }
 
+// Validates and sends the email.
 async function handleSend() {
   if (!validate()) return
 
@@ -184,6 +198,7 @@ async function handleSend() {
 </script>
 
 <template>
+  <!-- Compose modal overlay -->
   <Teleport to="body">
     <div v-if="visible" class="modal-overlay" @click.self="handleClose">
       <div
@@ -194,6 +209,7 @@ async function handleSend() {
         aria-labelledby="email-modal-title"
         @keydown="handleKeydown"
       >
+        <!-- Modal title and close control -->
         <header class="modal__header">
           <h2 id="email-modal-title">Send Email</h2>
           <button type="button" class="modal__close" aria-label="Close" @click="handleClose">
@@ -201,6 +217,7 @@ async function handleSend() {
           </button>
         </header>
 
+        <!-- Success message or email form -->
         <div class="modal__body">
           <div v-if="sendSuccess" class="modal__success">
             <AppIcon name="check" :size="24" />
@@ -209,6 +226,7 @@ async function handleSend() {
           </div>
 
           <template v-else>
+            <!-- Recipient summary -->
             <div class="modal__recipients">
               <span class="modal__recipients-label">To:</span>
               <span class="modal__recipients-value">
@@ -217,6 +235,7 @@ async function handleSend() {
               </span>
             </div>
 
+            <!-- Email subject field -->
             <FormInput
               id="email-subject"
               v-model="subject"
@@ -226,6 +245,7 @@ async function handleSend() {
               required
             />
 
+            <!-- Email message field -->
             <FormTextarea
               id="email-message"
               v-model="message"
@@ -236,6 +256,7 @@ async function handleSend() {
               required
             />
 
+            <!-- Optional attachment picker -->
             <div class="modal__attachment">
               <span id="email-attachment-label" class="modal__attachment-label">
                 Attachment (optional, max 10 MB)
@@ -267,12 +288,14 @@ async function handleSend() {
               <FormError id="email-attachment-error" :message="errors.attachment" />
             </div>
 
+            <!-- Send error message -->
             <div v-if="sendError" role="alert" class="modal__error">
               {{ sendError }}
             </div>
           </template>
         </div>
 
+        <!-- Cancel and send actions -->
         <footer v-if="!sendSuccess" class="modal__footer">
           <button type="button" class="modal__button modal__button--secondary" @click="handleClose">
             Cancel

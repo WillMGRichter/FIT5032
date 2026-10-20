@@ -2,6 +2,7 @@ const authService = require('../services/authService')
 const projectService = require('../services/projectService')
 const ratingModel = require('../models/ratingModel')
 
+// Syncs a Firebase identity with an app profile.
 async function syncUser(req, res, next) {
   try {
     const user = await authService.syncUser(req.firebaseUid, req.firebaseEmail, req.body)
@@ -11,6 +12,7 @@ async function syncUser(req, res, next) {
   }
 }
 
+// Returns the current app profile.
 async function me(req, res, next) {
   try {
     if (req.firebaseUid && !req.user) {
@@ -24,6 +26,7 @@ async function me(req, res, next) {
   }
 }
 
+// Returns profile details.
 async function getProfile(req, res, next) {
   try {
     res.json({ data: { user: req.user } })
@@ -32,6 +35,7 @@ async function getProfile(req, res, next) {
   }
 }
 
+// Saves profile changes.
 async function updateProfile(req, res, next) {
   try {
     const user = await authService.updateUserProfile(req.user.id, req.body)
@@ -41,6 +45,7 @@ async function updateProfile(req, res, next) {
   }
 }
 
+// Saves recommendation preferences.
 async function updatePreferences(req, res, next) {
   try {
     const user = await authService.updateUserInterests(req.user.id, req.body?.interests)
@@ -50,6 +55,7 @@ async function updatePreferences(req, res, next) {
   }
 }
 
+// Returns projects created or joined by the user.
 async function getMyProjects(req, res, next) {
   try {
     const [created, joined] = await Promise.all([
@@ -62,6 +68,7 @@ async function getMyProjects(req, res, next) {
   }
 }
 
+// Returns ratings submitted by the user.
 async function getMyRatings(req, res, next) {
   try {
     const ratings = await ratingModel.findByUser(req.user.id)

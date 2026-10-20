@@ -2,13 +2,16 @@ const { Pool } = require('pg')
 
 let pool = null
 
+// Chooses SSL settings for a database connection.
 function resolveSsl(connectionString) {
   if (process.env.DATABASE_SSL === 'true') return { rejectUnauthorized: false }
   if (process.env.DATABASE_SSL === 'false') return false
   const isLocal = /(^|@)(localhost|127\.0\.0\.1)/.test(connectionString)
+  // Use TLS by default for remote databases.
   return isLocal ? false : { rejectUnauthorized: false }
 }
 
+// Creates the shared PostgreSQL connection pool.
 function getPool() {
   if (pool) return pool
 
@@ -31,6 +34,7 @@ function getPool() {
   return pool
 }
 
+// Returns a query function for cloud jobs.
 function getQuery() {
   const active = getPool()
   return (sql, params) => active.query(sql, params)

@@ -25,15 +25,18 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const TITLE_MAX = 160
 const DESC_MAX = 1000
 
+// Gets today's local date.
 function todayStr() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+// Checks whether an action is overdue.
 function isOverdue(action) {
   return !action.completed && !!action.dueDate && action.dueDate < todayStr()
 }
 
+// Validates and parses a YYYY-MM-DD date.
 function parseIsoDate(value) {
   if (typeof value !== 'string' || !ISO_DATE.test(value)) return null
   const [year, month, day] = value.split('-').map(Number)
@@ -42,6 +45,7 @@ function parseIsoDate(value) {
   return value
 }
 
+// Validates an action form.
 function validate(form) {
   const errors = {}
   const title = typeof form.title === 'string' ? form.title.trim() : ''
@@ -77,11 +81,16 @@ const edit = reactive({ title: '', description: '', dueDate: '' })
 const editErrors = ref({})
 const isSaving = ref(false)
 
+// Counts completed actions.
 const completedCount = computed(() => actions.value.filter((a) => a.completed).length)
+// Counts all actions.
 const totalCount = computed(() => actions.value.length)
+// Calculates action completion progress.
 const percent = computed(() => (totalCount.value ? Math.round((completedCount.value / totalCount.value) * 100) : 0))
+// Counts overdue actions.
 const overdueCount = computed(() => actions.value.filter((a) => isOverdue(a)).length)
 
+// Describes the current completion state.
 const stateLabel = computed(() => {
   if (!totalCount.value) return 'No actions'
   if (completedCount.value === totalCount.value) return 'Completed'
@@ -89,12 +98,14 @@ const stateLabel = computed(() => {
   return 'In progress'
 })
 
+// Selects the completion state style.
 const stateClass = computed(() => {
   if (stateLabel.value === 'Completed') return 'action-tracker__progress-state--done'
   if (stateLabel.value === 'In progress') return 'action-tracker__progress-state--in-progress'
   return 'action-tracker__progress-state--none'
 })
 
+// Sorts unfinished actions before completed ones.
 const displayActions = computed(() => {
   return [...actions.value].sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1
@@ -110,17 +121,21 @@ const displayActions = computed(() => {
   })
 })
 
+// Shows a status message.
 function setNotice(msg) {
   notice.value = msg
 }
 
+// Updates an add-form field.
 function setAdd(field, value) {
   add[field] = value
 }
+// Updates an edit-form field.
 function setEdit(field, value) {
   edit[field] = value
 }
 
+// Loads actions for the current project.
 async function loadActions() {
   isLoading.value = true
   loadError.value = ''
@@ -135,6 +150,7 @@ async function loadActions() {
   }
 }
 
+// Creates suggested actions for the project.
 async function applySuggestions() {
   const templates = getSuggestedActionsForProject({
     id: props.projectId,
@@ -154,6 +170,7 @@ async function applySuggestions() {
   }
 }
 
+// Load saved actions before adding suggestions.
 onMounted(async () => {
   await loadActions()
   if (!actions.value.some((a) => a.isSuggested)) {
@@ -161,6 +178,7 @@ onMounted(async () => {
   }
 })
 
+// Validates and saves a new action.
 async function handleAdd() {
   const { errors, values } = validate(add)
   addErrors.value = errors
@@ -185,6 +203,7 @@ async function handleAdd() {
   }
 }
 
+// Opens an action in the edit form.
 function startEdit(action) {
   editingId.value = action.id
   edit.title = action.title
@@ -193,6 +212,7 @@ function startEdit(action) {
   editErrors.value = {}
 }
 
+// Saves changes to the selected action.
 async function handleSaveEdit() {
   const { errors, values } = validate(edit)
   editErrors.value = errors
@@ -211,10 +231,12 @@ async function handleSaveEdit() {
   }
 }
 
+// Closes the edit form.
 function cancelEdit() {
   editingId.value = null
 }
 
+// Changes an action's completion state.
 async function handleToggle(action) {
   try {
     const updated = await toggleAction(action.id)
@@ -226,6 +248,7 @@ async function handleToggle(action) {
   }
 }
 
+// Deletes the selected action.
 async function handleDelete(action) {
   if (!window.confirm(`Delete \u201c${action.title}\u201d? This cannot be undone.`)) return
   try {
@@ -239,7 +262,9 @@ async function handleDelete(action) {
 </script>
 
 <template>
+  <!-- Project action plan -->
   <section class="action-tracker" aria-labelledby="at-heading">
+    <!-- Plan title and add-action control -->
     <header class="action-tracker__header">
       <h3 id="at-heading">My Action Plan</h3>
       <p class="action-tracker__subtitle">
@@ -250,6 +275,7 @@ async function handleDelete(action) {
     <p v-if="notice" class="action-tracker__notice" role="status">{{ notice }}</p>
     <p v-if="actionError" class="action-tracker__error" role="alert">{{ actionError }}</p>
 
+    <!-- Loading and error states -->
     <div v-if="isLoading" class="action-tracker__state">Loading your action plan&hellip;</div>
 
     <div v-else-if="loadError" class="action-tracker__state action-tracker__state--error" role="alert">
@@ -258,6 +284,7 @@ async function handleDelete(action) {
     </div>
 
     <template v-else>
+      <!-- Completion summary and progress bar -->
       <div class="action-tracker__progress">
         <div class="action-tracker__progress-header">
           <span class="action-tracker__progress-state" :class="stateClass">{{ stateLabel }}</span>
@@ -280,6 +307,7 @@ async function handleDelete(action) {
         </div>
       </div>
 
+      <!-- Action list and inline edit forms -->
       <ul v-if="displayActions.length" class="action-tracker__list">
         <li
           v-for="action in displayActions"
@@ -379,6 +407,7 @@ async function handleDelete(action) {
       </ul>
       <p v-else class="action-tracker__empty">No actions yet for this project.</p>
 
+      <!-- Form for adding an action -->
       <div class="action-tracker__add">
         <button
           v-if="!showAdd"

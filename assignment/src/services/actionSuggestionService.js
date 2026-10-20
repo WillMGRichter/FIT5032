@@ -1,3 +1,4 @@
+// Converts a date value to YYYY-MM-DD.
 function toISODate(value) {
   if (!value) return null
   const iso = value.length === 10 ? `${value}T00:00:00Z` : value
@@ -6,21 +7,25 @@ function toISODate(value) {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
 }
 
+// Gets today's local date.
 function todayISO() {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 }
 
+// Adds days to a date string.
 function addDays(dateStr, days) {
   const d = new Date(`${dateStr}T00:00:00Z`)
   d.setUTCDate(d.getUTCDate() + days)
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
 }
 
+// Chooses a start date for suggested actions.
 function anchorDate(projectStartDate) {
   const start = toISODate(projectStartDate)
   const today = todayISO()
   if (!start) return today
+  // Keep suggestions for past projects from starting overdue.
   return start > today ? start : today
 }
 
@@ -33,6 +38,7 @@ const KEYWORD_MAP = [
   ['green-roof-wall', 'green roof', 'green wall', 'roof', 'wall'],
 ]
 
+// Matches a project to an action template group.
 function matchKey(project) {
   const id = String(project?.categoryId ?? '').toLowerCase()
   const name = String(project?.categoryName ?? project?.category?.name ?? '').toLowerCase()
@@ -96,6 +102,7 @@ const TEMPLATES = {
   ],
 }
 
+// Builds due-dated actions for a project.
 export function getSuggestedActionsForProject(project) {
   const key = matchKey(project)
   const templates = TEMPLATES[key] ?? TEMPLATES.default

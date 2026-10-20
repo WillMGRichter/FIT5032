@@ -19,7 +19,9 @@ const EXTENSION_TO_MIME = {
   '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 }
 
+// Encodes a file as a JSON attachment.
 async function fileToAttachment(file) {
+  // Convert the file in small chunks.
   const buffer = new Uint8Array(await file.arrayBuffer())
   let binary = ''
   const chunkSize = 0x8000
@@ -35,6 +37,7 @@ async function fileToAttachment(file) {
   }
 }
 
+// Sends a broadcast email through the cloud endpoint.
 export async function sendEmail({ recipients, subject, message, attachments = [] }) {
   if (!EMAIL_FUNCTION_URL) {
     throw new ApiError('Email function is not configured. Set VITE_EMAIL_FUNCTION_URL.', {
@@ -47,6 +50,7 @@ export async function sendEmail({ recipients, subject, message, attachments = []
   }
 
   const token = await auth.currentUser.getIdToken(true)
+  // Encode attachments for the JSON request.
   const attachmentPayload = await Promise.all(attachments.map(fileToAttachment))
 
   let response
@@ -81,6 +85,7 @@ export async function sendEmail({ recipients, subject, message, attachments = []
   return payload ?? null
 }
 
+// Sends a project email through the API.
 export async function sendProjectEmail(projectId, { recipients, subject, message, attachments = [] }) {
   const formData = new FormData()
   if (recipients && recipients.length > 0) {
@@ -123,6 +128,7 @@ export async function sendProjectEmail(projectId, { recipients, subject, message
   return payload?.data
 }
 
+// Gets the participants for a project.
 export async function getProjectParticipants(projectId) {
   return apiRequest(`/api/email/projects/${projectId}/participants`)
 }

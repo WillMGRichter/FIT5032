@@ -66,12 +66,15 @@ const manualError = ref('')
 let currentLocation = null
 const startPoint = ref(null)
 
+// Keeps projects with valid coordinates.
 const mappableProjects = computed(() =>
   props.projects.filter((project) => isValidCoord(project.latitude, project.longitude)),
 )
 
+// Counts projects without coordinates.
 const unmappedCount = computed(() => props.projects.length - mappableProjects.value.length)
 
+// Selects the active route origin.
 const origin = computed(() => {
   if (currentLocation) {
     return { lat: currentLocation.lat, lng: currentLocation.lng, label: 'Your current location' }
@@ -80,20 +83,25 @@ const origin = computed(() => {
   return null
 })
 
+// Shows the route origin label.
 const originLabel = computed(() => origin.value?.label ?? 'Not set yet')
 
+// Checks that map coordinates are usable.
 function isValidCoord(latitude, longitude) {
   const lat = Number(latitude)
   const lng = Number(longitude)
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return false
+  // Skip placeholder coordinates.
   return !(lat === 0 && lng === 0)
 }
 
+// Builds the project details link.
 function projectDetailsHref(project) {
   return router.resolve({ name: 'project-details', params: { id: project.id } }).href
 }
 
+// Builds a popup for a project marker.
 function createPopupContent(project) {
   const wrapper = document.createElement('div')
   wrapper.className = 'project-map__popup'
@@ -121,10 +129,12 @@ function createPopupContent(project) {
   return wrapper
 }
 
+// Removes project markers from the map.
 function clearMarkers() {
   if (markerLayer) markerLayer.clearLayers()
 }
 
+// Adds a marker for each mappable project.
 function addMarkers() {
   if (!map || !markerLayer) return
   clearMarkers()
@@ -149,12 +159,14 @@ function addMarkers() {
   }
 }
 
+// Builds a place search URL.
 function nominatimUrl(query, limit = 6) {
   return `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=${limit}&q=${encodeURIComponent(
     query,
   )}`
 }
 
+// Searches for places around the map.
 async function runSearch() {
   const query = searchQuery.value.trim()
   if (!query || isSearching.value) return
@@ -193,10 +205,12 @@ async function runSearch() {
   }
 }
 
+// Closes the place search results.
 function closeSearch() {
   searchOpen.value = false
 }
 
+// Selects a place and centers the map on it.
 function selectSearchResult(place) {
   const lat = Number(place.lat)
   const lng = Number(place.lon)
@@ -211,6 +225,7 @@ function selectSearchResult(place) {
   showSearchPin(selectedPlace.value)
 }
 
+// Adds a marker for the selected place.
 function showSearchPin(place) {
   if (!map || !searchLayer) return
   searchLayer.clearLayers()
@@ -241,11 +256,13 @@ function showSearchPin(place) {
   map.setView([place.lat, place.lng], Math.max(map.getZoom(), 13), { animate: true })
 }
 
+// Clears the selected place marker.
 function clearSelectedPlace() {
   if (searchLayer) searchLayer.clearLayers()
   selectedPlace.value = null
 }
 
+// Decodes the route returned by the routing service.
 function decodePolyline(encoded) {
   const coordinates = []
   let index = 0
@@ -279,11 +296,13 @@ function decodePolyline(encoded) {
   return coordinates
 }
 
+// Formats route distance for display.
 function formatDistance(meters) {
   if (meters < 1000) return `${Math.round(meters)} m`
   return `${(meters / 1000).toFixed(1)} km`
 }
 
+// Formats route duration for display.
 function formatDuration(seconds) {
   const minutes = Math.round(seconds / 60)
   if (minutes < 60) return `${minutes} min`
@@ -292,6 +311,7 @@ function formatDuration(seconds) {
   return rest > 0 ? `${hours} hr ${rest} min` : `${hours} hr`
 }
 
+// Creates a start or destination marker icon.
 function routeIcon(label, kind) {
   return L.divIcon({
     className: `project-map__route-icon project-map__route-icon--${kind}`,
@@ -302,12 +322,14 @@ function routeIcon(label, kind) {
   })
 }
 
+// Clears the route line and summary.
 function clearRoute() {
   if (routeLayer) routeLayer.clearLayers()
   routeData.value = null
   routeError.value = ''
 }
 
+// Requests and displays a driving route.
 async function calculateRoute() {
   if (!map || !origin.value) {
     routeError.value = 'A starting point is needed before a route can be calculated.'
@@ -326,6 +348,7 @@ async function calculateRoute() {
     lng: Number(directionsProject.value.longitude),
   }
 
+  // The router expects longitude, latitude pairs.
   const url =
     `https://router.project-osrm.org/route/v1/driving/` +
     `${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=polyline&steps=false`
@@ -383,6 +406,7 @@ async function calculateRoute() {
   }
 }
 
+// Reads the device's current coordinates.
 function getCurrentPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -399,6 +423,7 @@ function getCurrentPosition() {
   })
 }
 
+// Uses the device location as the route origin.
 async function useMyLocation() {
   if (locating.value) return
 
@@ -407,6 +432,7 @@ async function useMyLocation() {
   locationMessage.value = 'Finding your current location…'
 
   try {
+    // Read location only after the user asks.
     const position = await getCurrentPosition()
     currentLocation = { lat: position.coords.latitude, lng: position.coords.longitude }
     startPoint.value = null
@@ -435,11 +461,13 @@ async function useMyLocation() {
   }
 }
 
+// Opens the manual start-point form.
 function openManualStart() {
   manualStartOpen.value = true
   manualError.value = ''
 }
 
+// Searches for the manually entered route origin.
 async function searchManualStart() {
   const query = manualQuery.value.trim()
   if (!query || manualSearching.value) return
@@ -475,11 +503,13 @@ async function searchManualStart() {
   }
 }
 
+// Clears the manual route origin.
 function clearStartPoint() {
   startPoint.value = null
   clearRoute()
 }
 
+// Opens directions for a project.
 function openDirections(project) {
   if (!project) return
   directionsProject.value = project
@@ -499,12 +529,14 @@ function openDirections(project) {
   }
 }
 
+// Closes the directions panel.
 function closeDirections() {
   directionsOpen.value = false
   directionsProject.value = null
   clearRoute()
 }
 
+// Resets map, search, and directions state.
 function resetMap() {
   if (!map) return
   map.setView([props.center[0], props.center[1]], props.zoom)
@@ -537,6 +569,7 @@ function resetMap() {
   }
 }
 
+// Creates the map and its marker layers.
 function initMap() {
   if (!mapContainer.value || map) return
   try {
@@ -568,6 +601,7 @@ function initMap() {
   }
 }
 
+// Refresh markers when project data changes.
 watch(
   () => props.projects,
   () => {
@@ -579,6 +613,7 @@ watch(
   { deep: true },
 )
 
+// Open the matching popup when a project is selected elsewhere.
 watch(
   () => props.selectedProjectId,
   (id) => {
@@ -591,8 +626,10 @@ watch(
   },
 )
 
+// Create the map after its container is rendered.
 onMounted(initMap)
 
+// Release map resources when the component is removed.
 onBeforeUnmount(() => {
   if (resizeObserver) resizeObserver.disconnect()
   if (map) {
@@ -607,6 +644,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="project-map" role="region" aria-label="Map of projects">
+    <!-- Loading and error states -->
     <div v-if="isLoading" class="project-map__overlay">Loading map data&hellip;</div>
 
     <div v-else-if="error" role="alert" class="project-map__overlay project-map__overlay--error">
@@ -622,12 +660,14 @@ onBeforeUnmount(() => {
     </div>
 
     <template v-else>
+      <!-- Interactive project map -->
       <div ref="mapContainer" class="project-map__canvas"></div>
 
       <p v-if="mappableProjects.length === 0" class="project-map__overlay">
         No projects with valid map coordinates to show yet.
       </p>
 
+      <!-- Place search and map controls -->
       <div class="project-map__topbar">
         <form class="project-map__search" role="search" @submit.prevent="runSearch">
           <label class="sr-only" for="project-map-search">Search for a place</label>
@@ -683,6 +723,7 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
+      <!-- Directions panel for the selected project -->
       <aside
         v-if="directionsOpen && directionsProject"
         class="project-map__directions"
@@ -705,6 +746,7 @@ onBeforeUnmount(() => {
           <span>{{ directionsProject.location }}</span>
         </div>
 
+        <!-- Choose a route origin -->
         <div v-if="!origin" class="project-map__directions-intro">
           <p>
             GreenLink uses your device location to show directions from where you are to this
@@ -734,6 +776,7 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
+        <!-- Current route origin and controls -->
         <div v-else class="project-map__directions-origin">
           <div class="project-map__directions-row">
             <span class="project-map__directions-route-icon" aria-hidden="true">A</span>
@@ -767,6 +810,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
+        <!-- Search for a manual route origin -->
         <form
           v-if="manualStartOpen"
           class="project-map__manual-start"
@@ -793,6 +837,7 @@ onBeforeUnmount(() => {
           </p>
         </form>
 
+        <!-- Route status and summary -->
         <div class="project-map__directions-results" aria-live="polite">
           <p v-if="routeComputing" class="project-map__directions-status">
             Calculating route&hellip;
@@ -821,6 +866,7 @@ onBeforeUnmount(() => {
         </div>
       </aside>
 
+      <!-- Projects missing map coordinates -->
       <p
         v-if="!directionsOpen && unmappedCount > 0"
         class="project-map__note"

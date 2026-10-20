@@ -12,6 +12,7 @@ export const PROJECT_STATUS_OPTIONS = [
   { value: 'cancelled', label: 'Cancelled' },
 ]
 
+// Creates a blank project form.
 export function createEmptyProjectForm() {
   return {
     title: '',
@@ -29,18 +30,22 @@ export function createEmptyProjectForm() {
   }
 }
 
+// Provides project form errors and validation actions.
 export function useProjectValidation(form) {
   const errors = reactive({})
 
+  // Clears all current field errors.
   function clearErrors() {
     Object.keys(errors).forEach((key) => delete errors[key])
   }
 
+  // Replaces field errors with server messages.
   function applyServerErrors(serverErrors) {
     clearErrors()
     Object.assign(errors, serverErrors)
   }
 
+  // Clears a field error when its value changes.
   watch(form, (next, previous) => {
     for (const key of Object.keys(next)) {
       if (next[key] !== previous[key]) {
@@ -49,6 +54,7 @@ export function useProjectValidation(form) {
     }
   })
 
+  // Validates project details, dates, and coordinates.
   function validate() {
     clearErrors()
     const next = {}

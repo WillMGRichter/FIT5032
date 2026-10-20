@@ -9,9 +9,12 @@ const state = reactive({
   unreadCount: 0,
 })
 
+// Checks whether a user is signed in.
 const isAuthenticated = computed(() => state.user !== null)
+// Checks whether the session is loading.
 const isLoading = computed(() => state.status === 'loading')
 
+// Loads the initial Firebase session and unread count.
 async function init() {
   if (state.status === 'ready') return
   state.status = 'loading'
@@ -36,12 +39,14 @@ async function init() {
         state.unreadCount = 0
       }
       state.status = 'ready'
+      // Read the initial session once.
       unsubscribe()
       resolve()
     })
   })
 }
 
+// Signs in and updates shared auth state.
 async function login(credentials) {
   const user = await authService.login(credentials)
   state.user = user
@@ -55,6 +60,7 @@ async function login(credentials) {
   return user
 }
 
+// Registers a user and stores the new session.
 async function register(userData) {
   const user = await authService.register(userData)
   state.user = user
@@ -63,6 +69,7 @@ async function register(userData) {
   return user
 }
 
+// Signs in with a provider and updates shared auth state.
 async function loginWithProvider(providerId) {
   const user = await authService.loginWithProvider(providerId)
   state.user = user
@@ -76,6 +83,7 @@ async function loginWithProvider(providerId) {
   return user
 }
 
+// Links a provider and updates shared auth state.
 async function linkProviderAccount(credentials) {
   const user = await authService.linkProviderAccount(credentials)
   state.user = user
@@ -89,6 +97,7 @@ async function linkProviderAccount(credentials) {
   return user
 }
 
+// Clears the session even if Firebase sign-out fails.
 async function logout() {
   try {
     await authService.logout()
@@ -99,10 +108,12 @@ async function logout() {
   }
 }
 
+// Replaces the cached app profile.
 function updateUser(user) {
   state.user = user
 }
 
+// Refreshes the notification badge count.
 function refreshUnreadCount() {
   if (!state.user) return
   notificationService.getUnreadCount().then((result) => {
@@ -110,6 +121,7 @@ function refreshUnreadCount() {
   }).catch(() => {})
 }
 
+// Exposes shared authentication state and actions.
 export function useAuthStore() {
   return {
     state,

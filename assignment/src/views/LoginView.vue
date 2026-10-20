@@ -24,6 +24,7 @@ const errors = reactive({
 const isSubmitting = ref(false)
 const submitError = ref(null)
 
+// Gets a readable sign-in error.
 function firebaseErrorMessage(code) {
   const map = {
     'auth/invalid-credential': 'Invalid email or password. Please try again.',
@@ -37,6 +38,7 @@ function firebaseErrorMessage(code) {
   return map[code] || 'Something went wrong while logging you in. Please try again.'
 }
 
+// Validates one login field.
 function validateField(field) {
   switch (field) {
     case 'email':
@@ -52,26 +54,31 @@ function validateField(field) {
   }
 }
 
+// Updates a field and clears its validation state.
 function onFieldUpdate({ field, value }) {
   form[field] = value
   validateField(field)
   submitError.value = null
 }
 
+// Gets the page to open after sign-in.
 function redirectTarget() {
   return typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/')
     ? route.query.redirect
     : '/'
 }
 
+// Redirects after provider sign-in succeeds.
 function handleSocialSuccess() {
   router.push(redirectTarget())
 }
 
+// Shows a provider sign-in error.
 function handleSocialError(message) {
   submitError.value = message
 }
 
+// Validates and submits the login form.
 async function handleSubmit() {
   if (isSubmitting.value) return
 
@@ -106,7 +113,9 @@ async function handleSubmit() {
 </script>
 
 <template>
+  <!-- Login page -->
   <section class="login" aria-labelledby="login-heading">
+    <!-- Page title and introduction -->
     <header class="login__header">
       <h1 id="login-heading">Log in</h1>
       <p class="login__intro">
@@ -114,6 +123,7 @@ async function handleSubmit() {
       </p>
     </header>
 
+    <!-- Password and provider sign-in options -->
     <form class="login__form" novalidate @submit.prevent="handleSubmit">
       <FormInput
         id="login-email"
@@ -138,6 +148,7 @@ async function handleSubmit() {
         @update:model-value="onFieldUpdate({ field: 'password', value: $event })"
       />
 
+      <!-- Login actions -->
       <div v-if="submitError" role="alert" class="login__alert">{{ submitError }}</div>
 
       <button type="submit" class="login__submit" :disabled="isSubmitting">

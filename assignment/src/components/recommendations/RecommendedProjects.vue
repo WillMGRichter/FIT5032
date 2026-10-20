@@ -20,6 +20,7 @@ const isLoading = ref(true)
 const loadError = ref(null)
 const showPreferences = ref(false)
 
+// Checks whether recommendations use personal history.
 const hasPersonalisation = computed(() => {
   const user = authStore.state.user
   return Boolean(
@@ -27,6 +28,7 @@ const hasPersonalisation = computed(() => {
   )
 })
 
+// Shows how the recommendations are ranked.
 const sectionNote = computed(() => {
   if (hasPersonalisation.value) {
     return 'Ranked for you from your interests, past participation, location and ratings.'
@@ -34,6 +36,7 @@ const sectionNote = computed(() => {
   return 'Showcasing highly rated, active and popular projects.'
 })
 
+// Loads projects, participation history, and recommendations.
 async function load() {
   isLoading.value = true
   loadError.value = null
@@ -55,10 +58,12 @@ async function load() {
   }
 }
 
+// Shows or hides interest preferences.
 function togglePreferences() {
   showPreferences.value = !showPreferences.value
 }
 
+// Reloads recommendations after preferences change.
 function onPreferencesSaved() {
   showPreferences.value = false
   load()
@@ -68,7 +73,9 @@ onMounted(load)
 </script>
 
 <template>
+  <!-- Recommended project section -->
   <section class="recommended" aria-labelledby="recommended-heading">
+    <!-- Heading and preference control -->
     <div class="recommended__header">
       <div>
         <h2 id="recommended-heading">Projects For You</h2>
@@ -85,10 +92,12 @@ onMounted(load)
       </button>
     </div>
 
+    <!-- Optional interest preferences -->
     <div v-if="showPreferences" id="recommended-preferences" class="recommended__preferences">
       <InterestPicker @saved="onPreferencesSaved" />
     </div>
 
+    <!-- Loading, error, and recommendation results -->
     <div v-if="isLoading" class="recommended__state">Working out what fits you best&hellip;</div>
 
     <div v-else-if="loadError" role="alert" class="recommended__state recommended__state--error">

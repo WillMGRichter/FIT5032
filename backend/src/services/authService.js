@@ -11,6 +11,7 @@ const VALID_INTERESTS = new Set([
   'community-action',
 ])
 
+// Creates a client input error.
 function badRequest(message, details = null) {
   const error = new Error(message)
   error.status = 400
@@ -18,6 +19,7 @@ function badRequest(message, details = null) {
   return error
 }
 
+// Creates an error containing field validation messages.
 function validationFailure(errors, status = 400) {
   const error = new Error('Validation failed')
   error.status = status
@@ -25,6 +27,7 @@ function validationFailure(errors, status = 400) {
   return error
 }
 
+// Validates and normalizes registration names.
 function validateRegistration(input) {
   const errors = {}
   const firstName = String(input.firstName ?? '').trim()
@@ -39,10 +42,12 @@ function validateRegistration(input) {
   return { errors, firstName, lastName }
 }
 
+// Creates or finds the app profile for a Firebase user.
 async function syncUser(firebaseUid, firebaseEmail, input) {
   const { errors, firstName, lastName } = validateRegistration(input)
   if (Object.keys(errors).length > 0) throw validationFailure(errors)
 
+  // Match the profile by Firebase UID.
   let user = await userModel.findByFirebaseUid(firebaseUid)
 
   if (!user) {
@@ -53,6 +58,7 @@ async function syncUser(firebaseUid, firebaseEmail, input) {
 
     const existingByEmail = await userModel.findByEmail(email)
     if (existingByEmail) {
+      // Do not link accounts by email alone.
       if (existingByEmail.firebaseUid) {
         throw badRequest('An account with this email already exists.')
       }
@@ -70,6 +76,7 @@ async function syncUser(firebaseUid, firebaseEmail, input) {
   return user
 }
 
+// Validates profile fields before saving.
 function validateProfileInput(input) {
   const errors = {}
   const firstName = String(input.firstName ?? '').trim()
@@ -122,6 +129,7 @@ function validateProfileInput(input) {
   }
 }
 
+// Creates a basic app profile for a verified Firebase user.
 async function ensureUserFromToken(firebaseUid, firebaseEmail) {
   let user = await userModel.findByFirebaseUid(firebaseUid)
   if (!user) {
@@ -137,6 +145,7 @@ async function ensureUserFromToken(firebaseUid, firebaseEmail) {
   return user
 }
 
+// Validates and saves profile changes.
 async function updateUserProfile(userId, input) {  if (typeof input !== 'object' || input === null) {
     throw badRequest('Request body must be a JSON object')
   }
@@ -157,6 +166,7 @@ async function updateUserProfile(userId, input) {  if (typeof input !== 'object'
   return userModel.update(userId, values)
 }
 
+// Checks that submitted interests are supported.
 function validateInterests(input) {
   if (!Array.isArray(input)) {
     throw badRequest('Interests must be a list of supported choices.')
@@ -168,6 +178,7 @@ function validateInterests(input) {
   return interests
 }
 
+// Saves a user's selected interests.
 async function updateUserInterests(userId, input) {
   const interests = validateInterests(input)
   return userModel.updateInterests(userId, interests)

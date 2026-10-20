@@ -18,11 +18,14 @@ defineProps({
 
 const emit = defineEmits(['update'])
 
+// Updates a project form field.
 function set(field, value) {
   emit('update', { field, value })
 }
 
+// Saves selected place coordinates in the form.
 function onCoordinates({ latitude, longitude }) {
+  // Store coordinates to six decimal places.
   if (typeof latitude === 'number') emit('update', { field: 'latitude', value: latitude.toFixed(6) })
   if (typeof longitude === 'number')
     emit('update', { field: 'longitude', value: longitude.toFixed(6) })
@@ -30,6 +33,7 @@ function onCoordinates({ latitude, longitude }) {
 </script>
 
 <template>
+  <!-- Project details -->
   <fieldset class="project-fields__fieldset" :disabled="disabled">
     <legend>About the project</legend>
     <FormInput
@@ -63,6 +67,7 @@ function onCoordinates({ latitude, longitude }) {
     />
   </fieldset>
 
+  <!-- Project location and coordinates -->
   <fieldset class="project-fields__fieldset" :disabled="disabled">
     <legend>Where it happens</legend>
     <LocationAutocomplete
@@ -79,6 +84,7 @@ function onCoordinates({ latitude, longitude }) {
     <p class="project-fields__hint">
       Pick a suggestion to auto-fill the coordinates below, or enter them manually.
     </p>
+    <!-- Latitude and longitude inputs -->
     <div class="project-fields__row">
       <FormNumberInput
         :id="`${idPrefix}-latitude`"
@@ -114,6 +120,7 @@ function onCoordinates({ latitude, longitude }) {
     />
   </fieldset>
 
+  <!-- Dates, capacity, and project plants -->
   <fieldset class="project-fields__fieldset" :disabled="disabled">
     <legend>When &amp; who</legend>
     <div class="project-fields__row">
@@ -159,6 +166,7 @@ function onCoordinates({ latitude, longitude }) {
     </div>
   </fieldset>
 
+  <!-- Native plant selection -->
   <fieldset class="project-fields__fieldset" :disabled="disabled">
     <legend>Native plants</legend>
     <FormCheckboxGroup

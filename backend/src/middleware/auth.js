@@ -6,6 +6,7 @@ const userModel = require("../models/userModel");
 
 let firebaseReady = false;
 
+// Initializes Firebase Admin credentials.
 function initFirebase() {
   if (firebaseReady) return;
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
@@ -41,6 +42,7 @@ function initFirebase() {
   firebaseReady = true;
 }
 
+// Updates a user's Firebase role claim.
 async function setFirebaseRoleClaim(firebaseUid, role) {
   if (!firebaseUid || !role) return;
   if (!firebaseReady) initFirebase();
@@ -48,6 +50,7 @@ async function setFirebaseRoleClaim(firebaseUid, role) {
   await getAuth().setCustomUserClaims(firebaseUid, { role });
 }
 
+// Reads the Firebase token and attaches the app user.
 async function attachUser(req, res, next) {
   try {
     if (!firebaseReady) initFirebase();
@@ -62,6 +65,7 @@ async function attachUser(req, res, next) {
         req.firebaseToken = decoded;
         req.user = await userModel.findByFirebaseUid(decoded.uid);
         if (req.user && decoded.role !== req.user.role) {
+          // Use the current database role.
           req.firebaseToken = { ...decoded, role: req.user.role };
           setFirebaseRoleClaim(decoded.uid, req.user.role).catch(() => {});
         }
@@ -75,6 +79,7 @@ async function attachUser(req, res, next) {
   }
 }
 
+// Rejects requests without an authenticated user.
 function requireAuth(req, res, next) {
   if (!req.user) {
     return res
@@ -84,6 +89,7 @@ function requireAuth(req, res, next) {
   next();
 }
 
+// Restricts a route to the listed roles.
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) {

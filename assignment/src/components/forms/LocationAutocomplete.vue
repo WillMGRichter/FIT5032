@@ -30,10 +30,12 @@ let debounceTimer = null
 let controller = null
 let requestSeq = 0
 
+// Builds a place search URL.
 function searchUrl(query) {
   return `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=${SUGGESTION_LIMIT}&lang=en`
 }
 
+// Removes repeated label parts.
 function dedupe(parts) {
   const seen = new Set()
   const unique = []
@@ -48,6 +50,7 @@ function dedupe(parts) {
   return unique
 }
 
+// Builds the selected place label.
 function buildLabel(properties) {
   const parts = dedupe([
     properties.name,
@@ -60,16 +63,19 @@ function buildLabel(properties) {
   return label
 }
 
+// Gets the main suggestion label.
 function primaryText(place) {
   return place.properties.name || place.properties.street || place.properties.city || 'Location'
 }
 
+// Gets the supporting suggestion label.
 function secondaryText(place) {
   const { name, street, city, state, country } = place.properties
   const parts = dedupe([street !== name ? street : null, city, state, country])
   return parts.join(', ')
 }
 
+// Cancels the current place search.
 function cancelInflight() {
   if (controller) {
     controller.abort()
@@ -77,6 +83,7 @@ function cancelInflight() {
   }
 }
 
+// Clears the suggestion list.
 function resetSuggestions(clearStatus = true) {
   suggestions.value = []
   isOpen.value = false
@@ -84,6 +91,7 @@ function resetSuggestions(clearStatus = true) {
   if (clearStatus) statusMessage.value = ''
 }
 
+// Debounces a place search.
 function queueSearch(value) {
   clearTimeout(debounceTimer)
   const query = String(value ?? '').trim()
@@ -98,8 +106,10 @@ function queueSearch(value) {
   debounceTimer = setTimeout(() => runSearch(query), DEBOUNCE_MS)
 }
 
+// Fetches place suggestions.
 async function runSearch(query) {
   const seq = ++requestSeq
+  // Ignore responses from older searches.
   cancelInflight()
   controller = new AbortController()
   isSearching.value = true
@@ -132,8 +142,10 @@ async function runSearch(query) {
   }
 }
 
+// Selects a place and emits its coordinates.
 function chooseSuggestion(place) {
   const { coordinates } = place.geometry
+  // GeoJSON orders coordinates as longitude, then latitude.
   const longitude = Number(coordinates?.[0])
   const latitude = Number(coordinates?.[1])
   const label = buildLabel(place.properties)
@@ -150,11 +162,13 @@ function chooseSuggestion(place) {
   resetSuggestions()
 }
 
+// Updates the input and queues a search.
 function onInput(event) {
   emit('update:modelValue', event.target.value)
   queueSearch(event.target.value)
 }
 
+// Moves the highlighted suggestion.
 function move(delta) {
   if (suggestions.value.length === 0) return
   const count = suggestions.value.length
@@ -162,6 +176,7 @@ function move(delta) {
   isOpen.value = true
 }
 
+// Handles keyboard selection and dismissal.
 function onKeydown(event) {
   if (event.key === 'ArrowDown') {
     event.preventDefault()
@@ -182,17 +197,21 @@ function onKeydown(event) {
   }
 }
 
+// Reopens existing suggestions on focus.
 function onFocus() {
   if (suggestions.value.length > 0) isOpen.value = true
 }
 
+// Closes suggestions when the user clicks outside.
 function onDocumentPointerDown(event) {
   if (root.value && !root.value.contains(event.target)) {
     resetSuggestions(false)
   }
 }
 
+// Watch for clicks outside the input.
 onMounted(() => document.addEventListener('pointerdown', onDocumentPointerDown))
+// Remove search timers and listeners when the field is removed.
 onBeforeUnmount(() => {
   document.removeEventListener('pointerdown', onDocumentPointerDown)
   clearTimeout(debounceTimer)
@@ -202,6 +221,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="root" class="form-field location-field" :class="{ 'form-field--error': Boolean(error) }">
+    <!-- Location label and text input -->
     <label :for="id" class="form-field__label">
       {{ label }}
       <span v-if="required" class="form-field__required" aria-hidden="true">*</span>
@@ -231,6 +251,7 @@ onBeforeUnmount(() => {
       <span v-if="isSearching" class="location-field__spinner" aria-hidden="true"></span>
     </div>
 
+    <!-- Place suggestions and attribution -->
     <ul
       v-if="isOpen"
       :id="`${id}-listbox`"
@@ -257,6 +278,7 @@ onBeforeUnmount(() => {
       </li>
     </ul>
 
+    <!-- Search status and validation error -->
     <p v-if="!isOpen && statusMessage && !error" :id="`${id}-status`" class="location-field__hint">
       {{ statusMessage }}
     </p>

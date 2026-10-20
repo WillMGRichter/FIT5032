@@ -6,6 +6,7 @@ const DESCRIPTION_MAX = 1000
 const MAX_SUGGESTIONS = 8
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
+// Creates a validation error.
 function badRequest(message, details = null) {
   const error = new Error(message)
   error.status = 400
@@ -13,24 +14,28 @@ function badRequest(message, details = null) {
   return error
 }
 
+// Creates a missing-record error.
 function notFound(message) {
   const error = new Error(message)
   error.status = 404
   return error
 }
 
+// Creates an access error.
 function forbidden(message) {
   const error = new Error(message)
   error.status = 403
   return error
 }
 
+// Checks that an ID contains a whole number.
 function assertNumericId(value, message = 'id must be a number') {
   if (!Number.isInteger(Number(value))) {
     throw badRequest(message)
   }
 }
 
+// Accepts only real dates in YYYY-MM-DD format.
 function parseIsoDate(value) {
   if (typeof value !== 'string' || !ISO_DATE.test(value)) return null
   const [year, month, day] = value.split('-').map(Number)
@@ -42,6 +47,7 @@ function parseIsoDate(value) {
   return matchesCalendar ? value : null
 }
 
+// Cleans and validates action fields.
 function validateFields({ title, description, dueDate }) {
   const errors = {}
 
@@ -72,6 +78,7 @@ function validateFields({ title, description, dueDate }) {
   }
 }
 
+// Loads a project or reports that it is missing.
 async function assertProjectExists(projectId) {
   const project = await projectModel.findById(projectId)
   if (!project) {
@@ -80,6 +87,7 @@ async function assertProjectExists(projectId) {
   return project
 }
 
+// Checks that the user can plan actions for a project.
 async function assertCanPlan(projectId, userId) {
   if (!userId) {
     throw forbidden('You must be signed in to plan actions.')
@@ -92,6 +100,7 @@ async function assertCanPlan(projectId, userId) {
   }
 }
 
+// Loads an action owned by the user.
 async function assertOwned(actionId, userId) {
   assertNumericId(actionId, 'Action id must be a number')
   const action = await actionPlanModel.findById(actionId)
@@ -101,15 +110,18 @@ async function assertOwned(actionId, userId) {
   return action
 }
 
+// Gets actions created by a user.
 async function getUserActions(userId) {
   return actionPlanModel.getByUser(userId)
 }
 
+// Gets a user's actions for one project.
 async function getProjectActions(userId, projectId) {
   assertNumericId(projectId, 'Project id must be a number')
   return actionPlanModel.getProjectActions(userId, projectId)
 }
 
+// Validates and saves a new action.
 async function createAction({ projectId, userId, title, description, dueDate }) {
   assertNumericId(projectId, 'Project id must be a number')
   await assertCanPlan(projectId, userId)
@@ -122,6 +134,7 @@ async function createAction({ projectId, userId, title, description, dueDate }) 
   return actionPlanModel.create({ projectId, userId, ...values })
 }
 
+// Validates and saves changes to an action.
 async function updateAction(actionId, userId, updates) {
   const action = await assertOwned(actionId, userId)
 
@@ -137,6 +150,7 @@ async function updateAction(actionId, userId, updates) {
   return actionPlanModel.update(actionId, values)
 }
 
+// Removes an action owned by the user.
 async function deleteAction(actionId, userId) {
   await assertOwned(actionId, userId)
   const removed = await actionPlanModel.deleteById(actionId)
@@ -146,6 +160,7 @@ async function deleteAction(actionId, userId) {
   return { success: true }
 }
 
+// Toggles an action's completion state.
 async function toggleAction(actionId, userId) {
   const action = await assertOwned(actionId, userId)
   const completed = !action.completed
@@ -153,6 +168,7 @@ async function toggleAction(actionId, userId) {
   return actionPlanModel.updateCompletion(actionId, completed, completedAt)
 }
 
+// Validates a list of suggested actions.
 function validateSuggestedTemplates(templates) {
   if (!Array.isArray(templates) || templates.length === 0) {
     throw badRequest('Validation failed', {
@@ -173,6 +189,7 @@ function validateSuggestedTemplates(templates) {
   })
 }
 
+// Creates suggested actions once for a project participant.
 async function generateSuggestions({ projectId, userId, templates }) {
   assertNumericId(projectId, 'Project id must be a number')
   const cleanTemplates = validateSuggestedTemplates(templates)

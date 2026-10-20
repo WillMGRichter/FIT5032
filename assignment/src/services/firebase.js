@@ -13,6 +13,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
+// Use the deployed Functions region.
 export const functions = getFunctions(
   app,
   import.meta.env.VITE_FUNCTIONS_REGION || 'australia-southeast1',

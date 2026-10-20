@@ -31,6 +31,7 @@ const isSubmitting = ref(false)
 const submitError = ref(null)
 const isSuccess = ref(false)
 
+// Gets a readable registration error.
 function firebaseErrorMessage(code) {
   const map = {
     'auth/email-already-in-use': 'An account with this email already exists. Try logging in instead.',
@@ -42,6 +43,7 @@ function firebaseErrorMessage(code) {
   return map[code] || 'Something went wrong while creating your account. Please try again.'
 }
 
+// Validates one registration field.
 function validateField(field) {
   switch (field) {
     case 'firstName':
@@ -90,6 +92,7 @@ function validateField(field) {
   }
 }
 
+// Updates a field and clears its validation state.
 function onFieldUpdate({ field, value }) {
   form[field] = value
   validateField(field)
@@ -97,12 +100,14 @@ function onFieldUpdate({ field, value }) {
   submitError.value = null
 }
 
+// Gets the page to open after registration.
 function redirectTarget() {
   return typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/')
     ? route.query.redirect
     : '/'
 }
 
+// Shows success before redirecting after provider sign-in.
 function handleSocialSuccess() {
   isSuccess.value = true
   setTimeout(() => {
@@ -110,10 +115,12 @@ function handleSocialSuccess() {
   }, 1000)
 }
 
+// Shows a provider sign-in error.
 function handleSocialError(message) {
   submitError.value = message
 }
 
+// Validates and submits the registration form.
 async function handleSubmit() {
   if (isSubmitting.value || isSuccess.value) return
 
@@ -158,7 +165,9 @@ async function handleSubmit() {
 </script>
 
 <template>
+  <!-- Registration page -->
   <section class="register" aria-labelledby="register-heading">
+    <!-- Page title and introduction -->
     <header class="register__header">
       <h1 id="register-heading">Create your account</h1>
       <p class="register__intro">
@@ -166,12 +175,15 @@ async function handleSubmit() {
       </p>
     </header>
 
+    <!-- Registration success message -->
     <div v-if="isSuccess" role="status" class="register__success">
       <h2>Welcome to GreenLink!</h2>
       <p>You're all signed in &mdash; taking you to the home page&hellip;</p>
     </div>
 
+    <!-- Account details and provider sign-in options -->
     <form v-else class="register__form" novalidate @submit.prevent="handleSubmit">
+      <!-- Name fields -->
       <div class="register__row">
         <FormInput
           id="register-first-name"
@@ -230,6 +242,7 @@ async function handleSubmit() {
         @update:model-value="onFieldUpdate({ field: 'confirmPassword', value: $event })"
       />
 
+      <!-- Registration actions -->
       <div v-if="submitError" role="alert" class="register__alert">{{ submitError }}</div>
 
       <button type="submit" class="register__submit" :disabled="isSubmitting">

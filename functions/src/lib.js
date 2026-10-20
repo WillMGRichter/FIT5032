@@ -22,6 +22,7 @@ const ALLOWED_MIME_TYPES = [
 
 const KINDS = ['broadcast', 'project', 'confirmation']
 
+// Creates an HTTP error with response details.
 function httpError(status, code, message, details = null) {
   const error = new Error(message)
   error.status = status
@@ -66,6 +67,7 @@ function canonicalCore(payload) {
   }
 }
 
+// Converts a request to its stable signing form.
 function canonicalBody(payload) {
   return JSON.stringify(canonicalCore(payload))
 }
@@ -76,6 +78,7 @@ function sign(secret, payload) {
   return crypto.createHmac('sha256', secret).update(canonicalBody(payload)).digest('base64')
 }
 
+// Checks the request signature and expiry.
 function verifySignature(secret, body) {
   if (!secret) return false
   if (typeof body.signature !== 'string' || body.signature.length === 0) return false
@@ -209,6 +212,7 @@ function validateAttachments(rawAttachments) {
   return { attachments, errors }
 }
 
+// Validates a participation confirmation request.
 function validateConfirmation(body) {
   const errors = {}
   const to = ({} && body.to) || {}
@@ -290,6 +294,7 @@ function buildConfirmationMessage({ user, project }) {
   return { subject, text, html }
 }
 
+// Creates the default SendGrid mailer.
 function defaultMailer(apiKey) {
   // eslint-disable-next-line global-require
   const sgMail = require('@sendgrid/mail')
@@ -301,6 +306,7 @@ function defaultMailer(apiKey) {
   }
 }
 
+// Checks permission for the requested email type.
 function authorize({ kind, decoded, body, secret }) {
   if (kind === 'broadcast') {
     if (decoded.role !== 'admin') {
@@ -323,6 +329,7 @@ function authorize({ kind, decoded, body, secret }) {
   }
 }
 
+// Validates and sends an email request.
 async function handleSendEmail({ body, decoded, secrets, provider = null }) {
   if (!decoded || !decoded.uid) {
     throw httpError(401, 'UNAUTHENTICATED', 'You must be signed in to send email.')

@@ -14,10 +14,12 @@ const isSaving = ref(false)
 const message = ref('')
 const error = ref('')
 
+// Checks whether an interest is selected.
 function isSelected(id) {
   return selected.value.includes(id)
 }
 
+// Adds or removes an interest.
 function toggleInterest(id) {
   message.value = ''
   error.value = ''
@@ -26,6 +28,7 @@ function toggleInterest(id) {
     : [...selected.value, id]
 }
 
+// Saves the selected interests.
 async function save() {
   if (isSaving.value) return
   isSaving.value = true
@@ -45,12 +48,14 @@ async function save() {
 </script>
 
 <template>
+  <!-- Interest preference choices -->
   <fieldset class="interest-picker">
     <legend class="interest-picker__legend">What are you interested in? (optional)</legend>
     <p class="interest-picker__hint">
       Pick any that appeal to you. These are used to rank "Projects For You".
     </p>
 
+    <!-- Available interests -->
     <div class="interest-picker__options">
       <label
         v-for="interest in INTERESTS"
@@ -67,6 +72,7 @@ async function save() {
       </label>
     </div>
 
+    <!-- Save action and status messages -->
     <div class="interest-picker__actions">
       <button type="button" class="interest-picker__save" :disabled="isSaving" @click="save">
         {{ isSaving ? 'Saving\u2026' : 'Save preferences' }}

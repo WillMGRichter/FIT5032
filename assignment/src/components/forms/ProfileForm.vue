@@ -11,6 +11,7 @@ defineProps({
 
 const emit = defineEmits(['update'])
 
+// Updates a profile field.
 function set(field, value) {
   emit('update', { field, value })
 }
@@ -18,6 +19,7 @@ function set(field, value) {
 
 <template>
   <div class="profile-form">
+    <!-- Name and contact details -->
     <div class="profile-form__row">
       <FormInput
         id="profile-first-name"
@@ -55,6 +57,7 @@ function set(field, value) {
       @update:model-value="set('email', $event)"
     />
 
+    <!-- Optional profile location -->
     <LocationAutocomplete
       id="profile-location"
       :model-value="profile.location"

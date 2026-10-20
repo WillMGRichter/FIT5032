@@ -24,8 +24,10 @@ const isSubmitting = ref(false)
 const submitError = ref(null)
 const isSuccess = ref(false)
 
+// Checks whether the requested project is missing.
 const isNotFound = computed(() => !isLoading.value && !loadError.value && !project.value)
 
+// Copies project data into the edit form.
 function populateForm(data) {
   form.title = data.title ?? ''
   form.description = data.description ?? ''
@@ -41,6 +43,7 @@ function populateForm(data) {
   form.plantIds = Array.isArray(data.plants) ? data.plants.map((plant) => plant.id) : []
 }
 
+// Loads the project and form options.
 async function loadPage(id) {
   if (!id) return
   isLoading.value = true
@@ -70,16 +73,19 @@ async function loadPage(id) {
   }
 }
 
+// Reloads the form when the route project changes.
 watch(
   () => route.params.id,
   (id) => loadPage(id),
   { immediate: true },
 )
 
+// Updates a project form field.
 function onFieldUpdate({ field, value }) {
   form[field] = value
 }
 
+// Converts form values to a project request.
 function buildPayload() {
   return {
     title: form.title.trim(),
@@ -97,6 +103,7 @@ function buildPayload() {
   }
 }
 
+// Validates and saves project changes.
 async function handleSubmit() {
   if (isSubmitting.value || !project.value) return
 
@@ -130,11 +137,14 @@ async function handleSubmit() {
 </script>
 
 <template>
+  <!-- Edit project page -->
   <section class="edit" aria-labelledby="edit-heading">
+    <!-- Link back to project discovery -->
     <nav class="edit__breadcrumb">
       <RouterLink :to="{ name: 'discover' }">&larr; Back to Discover</RouterLink>
     </nav>
 
+    <!-- Loading, missing, and error states -->
     <p v-if="isLoading" class="edit__state">Loading project&hellip;</p>
 
     <div v-else-if="isNotFound" class="edit__state">
@@ -152,6 +162,7 @@ async function handleSubmit() {
     </div>
 
     <template v-else>
+      <!-- Project title and edit instructions -->
       <header class="edit__header">
         <h1 id="edit-heading">Edit Project</h1>
         <p class="edit__intro">
@@ -160,11 +171,13 @@ async function handleSubmit() {
         </p>
       </header>
 
+      <!-- Save confirmation -->
       <div v-if="isSuccess" role="status" class="edit__success">
         <h2>Changes saved!</h2>
         <p>Taking you back to the project page&hellip;</p>
       </div>
 
+      <!-- Project fields and submit actions -->
       <form v-else class="edit__form" novalidate @submit.prevent="handleSubmit">
         <ProjectFormFields
           :form="form"

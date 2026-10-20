@@ -2,6 +2,7 @@ const pool = require('../config/db')
 const emailService = require('../services/emailService')
 const { buildAttachment } = emailService
 
+// Creates a client input error.
 function badRequest(message, details = null) {
   const error = new Error(message)
   error.status = 400
@@ -9,6 +10,7 @@ function badRequest(message, details = null) {
   return error
 }
 
+// Checks email fields and recipients.
 function validateSendInput(body) {
   const errors = {}
 
@@ -38,6 +40,7 @@ function validateSendInput(body) {
   return { subject, message, errors }
 }
 
+// Parses recipients from a multipart form or JSON body.
 function parseRecipients(body) {
   const raw = body.recipients
   if (typeof raw !== 'string') return raw
@@ -48,6 +51,7 @@ function parseRecipients(body) {
   }
 }
 
+// Gets the participants for a project.
 async function getProjectParticipants(projectId) {
   const { rows } = await pool.query(
     `SELECT u.id, u.email, u.first_name, u.last_name
@@ -65,6 +69,7 @@ async function getProjectParticipants(projectId) {
   }))
 }
 
+// Sends email to project participants.
 async function sendProjectEmail(req, res, next) {
   try {
     if (!req.user) {
@@ -101,6 +106,7 @@ async function sendProjectEmail(req, res, next) {
     }
 
     const participants = await getProjectParticipants(projectId)
+    // Limit requested recipients to project participants.
     const recipients = rawRecipients && rawRecipients.length > 0
       ? participants.filter((p) =>
           rawRecipients.some((r) => r.email === p.email),
@@ -125,6 +131,7 @@ async function sendProjectEmail(req, res, next) {
   }
 }
 
+// Returns participants to an authorized project manager.
 async function getProjectParticipantsEndpoint(req, res, next) {
   try {
     if (!req.user) {
@@ -156,6 +163,7 @@ async function getProjectParticipantsEndpoint(req, res, next) {
   }
 }
 
+// Sends an email broadcast to all selected users.
 async function sendBroadcastEmail(req, res, next) {
   try {
     if (!req.user) {

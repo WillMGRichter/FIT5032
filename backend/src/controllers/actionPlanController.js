@@ -1,5 +1,6 @@
 const actionPlanService = require('../services/actionPlanService')
 
+// Returns the signed-in user's actions.
 async function getAll(req, res, next) {
   try {
     const actions = await actionPlanService.getUserActions(req.user.id)
@@ -9,6 +10,7 @@ async function getAll(req, res, next) {
   }
 }
 
+// Returns actions for a project.
 async function getByProject(req, res, next) {
   try {
     const actions = await actionPlanService.getProjectActions(req.user.id, req.params.projectId)
@@ -18,6 +20,7 @@ async function getByProject(req, res, next) {
   }
 }
 
+// Creates an action.
 async function create(req, res, next) {
   try {
     const action = await actionPlanService.createAction({
@@ -30,6 +33,7 @@ async function create(req, res, next) {
   }
 }
 
+// Generates suggested project actions.
 async function suggest(req, res, next) {
   try {
     const result = await actionPlanService.generateSuggestions({
@@ -43,6 +47,7 @@ async function suggest(req, res, next) {
   }
 }
 
+// Updates an action.
 async function update(req, res, next) {
   try {
     const action = await actionPlanService.updateAction(
@@ -56,6 +61,7 @@ async function update(req, res, next) {
   }
 }
 
+// Changes an action's completion state.
 async function toggle(req, res, next) {
   try {
     const action = await actionPlanService.toggleAction(req.params.actionId, req.user.id)
@@ -65,6 +71,7 @@ async function toggle(req, res, next) {
   }
 }
 
+// Deletes an action.
 async function remove(req, res, next) {
   try {
     const result = await actionPlanService.deleteAction(req.params.actionId, req.user.id)

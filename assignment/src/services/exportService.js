@@ -1,5 +1,6 @@
 const ACTION_KEYS = new Set(['_actions', 'actions'])
 
+// Formats a date for export filenames.
 export function dateStamp(date = new Date()) {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -7,10 +8,13 @@ export function dateStamp(date = new Date()) {
   return `${y}-${m}-${d}`
 }
 
+// Removes action columns from exports.
 export function exportColumns(columns) {
+  // Omit action controls from exports.
   return columns.filter((col) => !ACTION_KEYS.has(col.key))
 }
 
+// Formats a row value for export.
 export function formatCell(row, col) {
   const raw = col.key.split('.').reduce((obj, k) => (obj != null ? obj[k] : undefined), row)
   if (col.format) return col.format(raw, row)
@@ -20,11 +24,14 @@ export function formatCell(row, col) {
   return String(raw)
 }
 
+// Escapes a value for CSV output.
 function sanitizeCsvValue(value) {
   const text = value == null ? '' : String(value)
+  // Quote each value and escape embedded quotes.
   return `"${text.replace(/"/g, '""')}"`
 }
 
+// Builds CSV text from table rows.
 export function buildCsv(columns, rows) {
   const cols = exportColumns(columns)
   const lines = []
@@ -35,6 +42,7 @@ export function buildCsv(columns, rows) {
   return lines.join('\r\n')
 }
 
+// Starts a browser download for a generated file.
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -46,13 +54,17 @@ function downloadBlob(blob, filename) {
   URL.revokeObjectURL(url)
 }
 
+// Downloads rows as a CSV file.
 export function exportCSV({ filename, columns, rows }) {
   const csv = buildCsv(columns, rows)
+  // Mark the CSV as UTF-8 for spreadsheet apps.
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
   downloadBlob(blob, filename)
 }
 
+// Builds and downloads a PDF table.
 export async function exportPDF({ filename, title, subtitle, columns, rows }) {
+  // Load PDF libraries only when needed.
   const [{ jsPDF }, { default: autoTable }] = await Promise.all([
     import('jspdf'),
     import('jspdf-autotable'),

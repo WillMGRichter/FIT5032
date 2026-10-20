@@ -11,6 +11,7 @@ const { getRecommendationsForUser } = require('./recommendations')
 
 admin.initializeApp()
 
+// Deploy all functions in one region.
 const REGION = 'australia-southeast1'
 
 const SENDGRID_API_KEY = defineSecret('SENDGRID_API_KEY')
@@ -18,6 +19,7 @@ const SENDGRID_FROM_EMAIL = defineSecret('SENDGRID_FROM_EMAIL')
 const EMAIL_HMAC_SECRET = defineSecret('EMAIL_HMAC_SECRET')
 const DATABASE_URL = defineSecret('DATABASE_URL')
 
+// Builds a JSON error response.
 function jsonError(status, code, message, errors) {
   const detail = { error: message }
   if (code) detail.code = code
@@ -31,6 +33,7 @@ exports.sendGreenLinkEmail = onRequest(
     cors: true,
     secrets: [SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, EMAIL_HMAC_SECRET],
   },
+  // Handles email requests from signed-in users.
   async (req, res) => {
     const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
@@ -95,6 +98,7 @@ exports.projectLifecycle = onSchedule(
     region: REGION,
     secrets: [DATABASE_URL],
   },
+  // Updates project status and notifies participants.
   async () => {
     const summary = await runProjectLifecycle({ query: getQuery() })
     logger.info('projectLifecycle ok', summary)
@@ -108,6 +112,7 @@ exports.actionReminders = onSchedule(
     region: REGION,
     secrets: [DATABASE_URL],
   },
+  // Sends reminders for actions due tomorrow.
   async () => {
     const summary = await runActionReminders({ query: getQuery() })
     logger.info('actionReminders ok', summary)
@@ -120,7 +125,9 @@ exports.recommendProjects = onCall(
     cors: true,
     secrets: [DATABASE_URL],
   },
+  // Returns recommendations for the signed-in user.
   async (request) => {
+    // Require a signed-in user for recommendations.
     if (!request.auth || !request.auth.uid) {
       throw new HttpsError('unauthenticated', 'You must be signed in to get recommendations.')
     }
