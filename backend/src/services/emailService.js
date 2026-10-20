@@ -7,6 +7,7 @@ const sgMail = require('@sendgrid/mail')
 const JOIN_ATTACHMENT_PATH = path.join(__dirname, '..', '..', 'assets', 'join_attachment.png')
 let joinAttachmentCache
 
+// Returns the participation join attachment sent every time a user joins a project
 function getJoinAttachment() {
   if (joinAttachmentCache !== undefined) return joinAttachmentCache
   try {
@@ -55,6 +56,7 @@ function serviceError(status, message, code = null, details = null) {
   return error
 }
 
+//Confirms apis/secrets are configured
 function assertConfigured() {
   if (!API_KEY) {
     throw serviceError(503, 'Email service is not configured. Set SENDGRID_API_KEY in the environment.')
@@ -64,6 +66,7 @@ function assertConfigured() {
   }
 }
 
+//Validates attachment size and type
 function validateAttachment(file) {
   if (file.size > ATTACHMENT_MAX_BYTES) {
     throw serviceError(400, 'Attachment must be 10 MB or smaller.')
@@ -76,6 +79,7 @@ function validateAttachment(file) {
   }
 }
 
+//Builds a SendGrid attachment from a file
 function buildAttachment(file) {
   return {
     content: file.buffer.toString('base64'),
@@ -84,6 +88,7 @@ function buildAttachment(file) {
   }
 }
 
+//Ensures user text is safe for HTML output
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -92,10 +97,12 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;')
 }
 
+//Converts plain text to HTML
 function toHtml(text) {
   return escapeHtml(text).replace(/\n/g, '<br>')
 }
 
+//Creates confirmation email message for when a user joins a project
 function buildConfirmationMessage({ user, project }) {
   const subject = `You're confirmed for "${project.title}"`
   const text = [
@@ -122,13 +129,15 @@ function buildConfirmationMessage({ user, project }) {
     .filter(Boolean)
     .join('\n')
 
-  return { subject, text, html }
+  return { subject, text, html } //Both plain and html as not all clients support html. SendGrid will send both and the client will choose which to display.
 }
 
+//Confirms valid email
 function validEmail(email) {
   return typeof email === 'string' && email.length <= 255 && EMAIL_PATTERN.test(email)
 }
 
+//Confirms there are email recipients and filters out all invalid emails.
 function normalizeRecipients(recipients) {
   if (!Array.isArray(recipients) || recipients.length === 0) {
     throw serviceError(400, 'At least one recipient is required.')
@@ -142,6 +151,7 @@ function normalizeRecipients(recipients) {
   return [...new Set(emails)]
 }
 
+// Validates email subject and message
 function sanitizeInput({ subject, message }) {
   const trimmedSubject = typeof subject === 'string' ? subject.trim() : ''
   const trimmedMessage = typeof message === 'string' ? message.trim() : ''
@@ -152,6 +162,7 @@ function sanitizeInput({ subject, message }) {
   return { subject: trimmedSubject, message: trimmedMessage }
 }
 
+// Converts a file to a SendGrid attachment object
 function sendgridAttachments(attachments) {
   return (attachments || []).map((a) => ({
     content: a.content,
@@ -161,12 +172,14 @@ function sendgridAttachments(attachments) {
   }))
 }
 
+//Function to send email
 async function sendMail({ kind, recipients, subject, message, attachments = [], user }) {
-  assertConfigured()
+  assertConfigured() //Validates secrets
 
-  const emails = normalizeRecipients(recipients)
-  const { subject: cleanSubject, message: cleanMessage } = sanitizeInput({ subject, message })
+  const emails = normalizeRecipients(recipients) // Validates recipients and filters out invalid emails
+  const { subject: cleanSubject, message: cleanMessage } = sanitizeInput({ subject, message }) //Cleans subject and messgae
 
+  // Builds email payload with shared properties for all recipients
   const shared = {
     from: FROM_EMAIL,
     subject: cleanSubject,
@@ -175,6 +188,7 @@ async function sendMail({ kind, recipients, subject, message, attachments = [], 
     ...(attachments.length > 0 ? { attachments: sendgridAttachments(attachments) } : {}),
   }
 
+  // Sends the email to all recipients using SendGrid
   await sgMail.send(emails.map((email) => ({ ...shared, to: email })))
 
   return {
@@ -193,6 +207,7 @@ async function sendBroadcastEmail({ recipients, subject, message, attachments = 
   return sendMail({ kind: 'broadcast', recipients, subject, message, attachments, user })
 }
 
+// Function to send participation confirmation email
 async function sendParticipationConfirmation({ userId, email, userName, projectTitle, projectLocation, startDate }) {
   assertConfigured()
 
@@ -205,7 +220,8 @@ async function sendParticipationConfirmation({ userId, email, userName, projectT
     throw serviceError(400, 'Recipient email is invalid.')
   }
 
-  const attachment = getJoinAttachment()
+  // Gets the participation join attachment
+  const attachment = getJoinAttachment() //
 
   await sgMail.send({
     to: email,

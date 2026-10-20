@@ -30,10 +30,12 @@ function httpError(status, code, message, details = null) {
   return error
 }
 
+//Confirms valid email
 function validateEmail(value) {
   return typeof value === 'string' && value.length <= 255 && EMAIL_PATTERN.test(value)
 }
 
+// Kept for backward compatibility in tests and tooling that still sign payloads.
 function canonicalCore(payload) {
   if (payload.kind === 'confirmation') {
     const to = payload.to || {}
@@ -68,6 +70,7 @@ function canonicalBody(payload) {
   return JSON.stringify(canonicalCore(payload))
 }
 
+// Kept for backward compatibility in tests and tooling that still sign payloads.
 function sign(secret, payload) {
   if (!secret) throw httpError(503, 'SIGNING_UNCONFIGURED', 'Email signing is not configured.')
   return crypto.createHmac('sha256', secret).update(canonicalBody(payload)).digest('base64')
@@ -90,6 +93,7 @@ function verifySignature(secret, body) {
   return crypto.timingSafeEqual(received, wanted)
 }
 
+// Validates email subject and message
 function validateMessage(subject, message) {
   const errors = {}
   subject = typeof subject === 'string' ? subject.trim() : ''
@@ -104,6 +108,7 @@ function validateMessage(subject, message) {
   return { subject, message, errors }
 }
 
+//Confirms there are email recipients and filters out all invalid emails.
 function validateRecipients(rawRecipients) {
   const errors = {}
   const recipients = []
@@ -134,6 +139,7 @@ function validateRecipients(rawRecipients) {
   return { recipients, errors }
 }
 
+//Validates attachment size and type (function in lib.js validates structure/size/type of incoming attachments)
 function validateAttachments(rawAttachments) {
   const errors = {}
   const attachments = []
@@ -240,6 +246,7 @@ function validateConfirmation(body) {
   }
 }
 
+//Ensures user text is safe for HTML output
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -248,10 +255,12 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;')
 }
 
+//Converts plain text to HTML
 function toHtml(text) {
   return escapeHtml(text).replace(/\n/g, '<br>')
 }
 
+//Creates confirmation email message for when a user joins a project
 function buildConfirmationMessage({ user, project }) {
   const subject = `You're confirmed for "${project.title}"`
   const text = [
