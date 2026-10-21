@@ -20,7 +20,8 @@ const { attachUser } = require("./middleware/auth");
 const app = express();
 
 const clientOrigins = (
-  process.env.CLIENT_ORIGIN || "http://localhost:5173,http://localhost:5174"
+  process.env.CLIENT_ORIGIN ||
+    "http://localhost:5173,http://localhost:5174,http://localhost:4173"
 )
   .split(",")
   .map((origin) => origin.trim())
